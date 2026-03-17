@@ -41,6 +41,9 @@ function Register() {
       />
 
       <button onClick={handleSubmit}>Register</button>
+      <button onClick={() => window.location.href = "/"}>
+  Already have an account? Login
+</button>
     </div>
   );
 }

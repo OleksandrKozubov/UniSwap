@@ -8,6 +8,8 @@ const handleLogout = () => {
 
 const token = localStorage.getItem("token");
 
+const user = JSON.parse(localStorage.getItem("user"));
+
 function Home() {
   const [listings, setListings] = useState([]);
 
@@ -19,9 +21,16 @@ function Home() {
 
   return (
     <div>
-      <h1>UniSwap Marketplace</h1>
-      <button onClick={handleLogout}>Logout</button>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+     <h1>UniSwap Marketplace</h1>
 
+  <div
+    style={{ cursor: "pointer" }}
+    onClick={() => window.location.href = "/profile"}
+  >
+    Welcome, {user?.name}
+  </div>
+   </div>
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         {listings.map(listing => (
           <ListingCard key={listing.id} listing={listing} />

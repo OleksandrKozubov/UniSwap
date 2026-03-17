@@ -15,6 +15,9 @@ function ListingDetails() {
 
   return (
     <div style={{ padding: "20px" }}>
+        <button onClick={() => window.location.href = "/home"}>
+  Back
+</button>
       <h2>{listing.title}</h2>
 
       <h3>${listing.price}</h3>

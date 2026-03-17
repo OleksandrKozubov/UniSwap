@@ -40,6 +40,22 @@ app.get("/listings/:id", async (req, res) => {
   }
 });
 
+app.post("/update-profile", async (req, res) => {
+  const { name, university, password } = req.body;
+
+  try {
+    let query = "UPDATE users SET name = $1, university = $2 WHERE id = 1";
+
+    await pool.query(query, [name, university]);
+
+    res.send("Updated");
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error updating profile");
+  }
+});
+
 app.post("/register", async (req, res) => {
   const { email, name, university, password } = req.body;
 
@@ -88,7 +104,14 @@ app.post("/login", async (req, res) => {
       { expiresIn: "24h" }
     );
 
-    res.json({ token });
+    res.json({
+  token,
+  user: {
+    id: user.rows[0].id,
+    name: user.rows[0].name,
+    email: user.rows[0].email
+  }
+});
 
   } catch (err) {
     console.error(err);

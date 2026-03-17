@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     const res = await fetch("http://localhost:5001/login", {
@@ -14,11 +16,15 @@ function Login() {
     });
 
     const data = await res.json();
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
 
     // store token
     localStorage.setItem("token", data.token);
 
-    alert("Logged in!");
+    localStorage.setItem("token", data.token);
+
+    navigate("/home")
   };
 
   return (
@@ -34,6 +40,9 @@ function Login() {
       />
 
       <button onClick={handleLogin}>Login</button>
+      <button onClick={() => window.location.href = "/register"}>
+  Register
+</button>
     </div>
   );
 }
