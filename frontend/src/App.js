@@ -1,25 +1,22 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ListingDetails from "./pages/ListingDetails";
+import CreateListing from "./pages/CreateListing";
 
 function App() {
-  const [items, setItems] = useState([]);
-
-  useEffect(() => {
-    fetch("http://localhost:5001/listings")
-      .then(res => res.json())
-      .then(data => setItems(data));
-  }, []);
-
   return (
-    <div>
-      <h1>UniSwap Listings</h1>
-
-      {items.map(item => (
-        <div key={item.id}>
-          {item.title} - ${item.price}
-        </div>
-      ))}
-
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/listing/:id" element={<ListingDetails />} />
+        <Route path="/create" element={<CreateListing />} />
+      </Routes>
+    </Router>
   );
 }
 
