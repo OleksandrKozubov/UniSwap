@@ -9,6 +9,10 @@ function Register() {
   });
 
   const handleSubmit = async () => {
+    if (!form.email || !form.name || !form.university || !form.password) {
+  alert("All fields are required");
+  return;
+}
     await fetch("http://localhost:5001/register", {
       method: "POST",
       headers: {

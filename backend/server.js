@@ -59,6 +59,10 @@ app.post("/update-profile", async (req, res) => {
 app.post("/register", async (req, res) => {
   const { email, name, university, password } = req.body;
 
+if (!email || !name || !university || !password) {
+  return res.status(400).json({ error: "All fields are required" });
+}
+
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -77,6 +81,10 @@ app.post("/register", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
+
+if (!email || !password) {
+  return res.status(400).json({ error: "Email and password required" });
+}
 
   try {
 

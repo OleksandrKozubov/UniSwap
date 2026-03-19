@@ -7,6 +7,10 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    if (!email || !password) {
+  alert("Please enter email and password");
+  return;
+}
     const res = await fetch("http://localhost:5001/login", {
       method: "POST",
       headers: {
