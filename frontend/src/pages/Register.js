@@ -8,6 +8,22 @@ function Register() {
     password: ""
   });
 
+  const pageStyle = {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
+    color: "#f5f5f5",
+    gap: "12px"
+  };
+
+  const inputStyle = {
+    width: "260px",
+    padding: "10px"
+  };
+
   const handleSubmit = async () => {
     if (!form.email || !form.name || !form.university || !form.password) {
   alert("All fields are required");
@@ -25,22 +41,31 @@ function Register() {
   };
 
   return (
-    <div>
+    <div style={pageStyle}>
       <h2>Register</h2>
 
-      <input placeholder="Email"
+      <input
+        style={inputStyle}
+        placeholder="Email"
         onChange={e => setForm({ ...form, email: e.target.value })}
       />
 
-      <input placeholder="Name"
+      <input
+        style={inputStyle}
+        placeholder="Name"
         onChange={e => setForm({ ...form, name: e.target.value })}
       />
 
-      <input placeholder="University"
+      <input
+        style={inputStyle}
+        placeholder="University"
         onChange={e => setForm({ ...form, university: e.target.value })}
       />
 
-      <input type="password" placeholder="Password"
+      <input
+        style={inputStyle}
+        type="password"
+        placeholder="Password"
         onChange={e => setForm({ ...form, password: e.target.value })}
       />
 

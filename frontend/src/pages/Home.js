@@ -1,26 +1,34 @@
 import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
 
-const handleLogout = () => {
-  localStorage.removeItem("token");
-  alert("Logged out");
+const pageStyle = {
+  minHeight: "100vh",
+  backgroundColor: "#1a1a1a",
+  color: "#f5f5f5",
+  padding: "20px"
 };
+
+// const handleLogout = () => {
+//   localStorage.removeItem("token");
+//   alert("Logged out");
+// };
 
 const token = localStorage.getItem("token");
 
-const user = JSON.parse(localStorage.getItem("user"));
-
 function Home() {
   const [listings, setListings] = useState([]);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     fetch("http://localhost:5001/listings")
       .then(res => res.json())
       .then(data => setListings(data));
+    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+    setUser(storedUser);
   }, []);
 
   return (
-    <div>
+    <div style={pageStyle}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
      <h1>UniSwap Marketplace</h1>
 

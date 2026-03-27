@@ -1,11 +1,17 @@
 import { useState } from "react";
 
+const pageStyle = {
+  minHeight: "100vh",
+  backgroundColor: "#1a1a1a",
+  color: "#f5f5f5",
+  padding: "20px"
+};
+
 function Profile() {
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [name, setName] = useState(user.name);
   const [university, setUniversity] = useState("");
-  const [password, setPassword] = useState("");
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -20,9 +26,9 @@ function Profile() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
+        userId: user.id,
         name,
-        university,
-        password
+        university
       })
     });
 
@@ -30,7 +36,7 @@ function Profile() {
   };
 
   return (
-    <div>
+    <div style={pageStyle}>
         <button onClick={() => window.location.href = "/home"}>
   Back
 </button>
@@ -50,13 +56,10 @@ function Profile() {
         placeholder="University"
       />
 
-      <input
-        type="password"
-        placeholder="New Password"
-        onChange={e => setPassword(e.target.value)}
-      />
-
       <button onClick={handleUpdate}>Update Profile</button>
+      <button onClick={() => window.location.href = "/change-password"}>
+        Change Password
+      </button>
 
       <br /><br />
 

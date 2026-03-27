@@ -6,6 +6,22 @@ function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  const pageStyle = {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
+    color: "#f5f5f5",
+    gap: "12px"
+  };
+
+  const inputStyle = {
+    width: "260px",
+    padding: "10px"
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
   alert("Please enter email and password");
@@ -32,14 +48,21 @@ function Login() {
   };
 
   return (
-    <div>
-      <h2>Login</h2>
+    <div style={pageStyle}>
+      <h1>Uniswap</h1>
 
-      <input placeholder="Email"
+      <h3>Login</h3>
+
+      <input
+        style={inputStyle}
+        placeholder="Email"
         onChange={e => setEmail(e.target.value)}
       />
 
-      <input type="password" placeholder="Password"
+      <input
+        style={inputStyle}
+        type="password"
+        placeholder="Password"
         onChange={e => setPassword(e.target.value)}
       />
 

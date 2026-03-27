@@ -1,6 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
+const pageStyle = {
+  minHeight: "100vh",
+  backgroundColor: "#1a1a1a",
+  color: "#f5f5f5",
+  padding: "20px"
+};
+
 function ListingDetails() {
   const { id } = useParams();
   const [listing, setListing] = useState(null);
@@ -14,7 +21,7 @@ function ListingDetails() {
   if (!listing) return <p>Loading...</p>;
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={pageStyle}>
         <button onClick={() => window.location.href = "/home"}>
   Back
 </button>
