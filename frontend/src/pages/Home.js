@@ -44,6 +44,25 @@ function Home() {
           <ListingCard key={listing.id} listing={listing} />
         ))}
       </div>
+      <button
+  onClick={() => window.location.href = "/create"}
+  style={{
+    position: "fixed",
+    bottom: "20px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    padding: "15px 25px",
+    fontSize: "16px",
+    borderRadius: "30px",
+    border: "none",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    cursor: "pointer",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
+  }}
+>
+  + Create Listing
+</button>
     </div>
   );
 }

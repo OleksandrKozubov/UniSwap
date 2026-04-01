@@ -11,6 +11,24 @@ const pageStyle = {
 function ListingDetails() {
   const { id } = useParams();
   const [listing, setListing] = useState(null);
+  const user = JSON.parse(localStorage.getItem("user"));
+
+const handleDelete = async () => {
+  const res = await fetch(`http://localhost:5001/listings/${listing.id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ userId: user.id })
+  });
+
+  if (res.ok) {
+    alert("Deleted");
+    window.location.href = "/home";
+  } else {
+    alert("Not allowed");
+  }
+};
 
   useEffect(() => {
     fetch(`http://localhost:5001/listings/${id}`)
@@ -30,6 +48,15 @@ function ListingDetails() {
       <h3>${listing.price}</h3>
 
       <p>{listing.description}</p>
+
+      {user?.id === listing.user_id && (
+  <>
+    <button onClick={handleDelete}>Delete</button>
+    <button onClick={() => window.location.href = `/listing/${listing.id}/edit`}>
+      Edit
+    </button>
+  </>
+)}
 
       <p style={{
         marginTop: "40px",

@@ -7,6 +7,7 @@ import ListingDetails from "./pages/ListingDetails";
 import CreateListing from "./pages/CreateListing";
 import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
+import EditListing from "./pages/EditListing";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/create" element={<CreateListing />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/listing/:id/edit" element={<EditListing />} />
       </Routes>
     </Router>
   );

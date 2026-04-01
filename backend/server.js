@@ -40,6 +40,75 @@ app.get("/listings/:id", async (req, res) => {
   }
 });
 
+app.post("/listings", async (req, res) => {
+  const { title, description, price, userId } = req.body;
+
+  if (!title || !price || !userId) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO listings (title, description, price, user_id)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [title, description, price, userId]
+    );
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error creating listing" });
+  }
+});
+
+app.put("/listings/:id", async (req, res) => {
+  const { title, description, price, userId } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE listings
+       SET title=$1, description=$2, price=$3
+       WHERE id=$4 AND user_id=$5
+       RETURNING *`,
+      [title, description, price, req.params.id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Update error" });
+  }
+});
+
+app.delete("/listings/:id", async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM listings
+       WHERE id=$1 AND user_id=$2`,
+      [req.params.id, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    res.json({ message: "Deleted" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Delete error" });
+  }
+});
+
 app.post("/update-profile", async (req, res) => {
   const { userId, name, university } = req.body;
 

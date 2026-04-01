@@ -64,6 +64,13 @@ function Profile() {
       <br /><br />
 
       <button onClick={handleLogout}>Logout</button>
+      <p style={{
+        marginTop: "40px",
+        fontSize: "12px",
+        opacity: 0.5
+      }}>
+        ID: {user.id}
+      </p>
     </div>
   );
 }
