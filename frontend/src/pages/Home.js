@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
+import Map from "../components/Map";
 
 const pageStyle = {
   minHeight: "100vh",

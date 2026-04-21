@@ -1,5 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import locations from "../data/locations";
+import Map from "../components/Map";
 
 const pageStyle = {
   minHeight: "100vh",
@@ -15,6 +17,14 @@ function ListingDetails() {
   const user = JSON.parse(localStorage.getItem("user"));
 
 const handleDelete = async () => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this listing?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
   // The backend checks the userId before allowing a delete.
   const res = await fetch(`http://localhost:5001/listings/${listing.id}`, {
     method: "DELETE",
@@ -40,6 +50,10 @@ const handleDelete = async () => {
 
   if (!listing) return <p>Loading...</p>;
 
+  const selectedLocation = locations.find(
+    loc => loc.name === listing.location
+  );
+
   return (
     <div style={pageStyle}>
         <button onClick={() => window.location.href = "/home"}>
@@ -50,6 +64,12 @@ const handleDelete = async () => {
       <h3>${listing.price}</h3>
 
       <p>{listing.description}</p>
+
+      <p>Location: {listing.location}</p>
+
+      {selectedLocation && (
+  <Map lat={selectedLocation.lat} lng={selectedLocation.lng} />
+)}
 
       {user?.id === listing.user_id && (
   <>

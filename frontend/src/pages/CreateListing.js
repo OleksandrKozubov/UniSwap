@@ -1,4 +1,5 @@
 import { useState } from "react";
+import locations from "../data/locations";
 
 // CreateListing gathers the listing fields and posts a new item for the current user.
 function CreateListing() {
@@ -7,6 +8,7 @@ function CreateListing() {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
 
   const pageStyle = {
     minHeight: "100vh",
@@ -31,7 +33,8 @@ function CreateListing() {
         title,
         description,
         price,
-        userId: user.id
+        userId: user.id,
+        location
       })
     });
 
@@ -56,6 +59,17 @@ function CreateListing() {
       <input placeholder="Title" onChange={e => setTitle(e.target.value)} />
       <input placeholder="Price" onChange={e => setPrice(e.target.value)} />
       <textarea placeholder="Description" onChange={e => setDescription(e.target.value)} />
+        <select
+  value={location}
+  onChange={e => setLocation(e.target.value)}
+>
+  <option value="">Select location</option>
+  {locations.map(loc => (
+    <option key={loc.name} value={loc.name}>
+      {loc.name} ({loc.city})
+    </option>
+  ))}
+</select>
 
       <button onClick={handleSubmit}>Create</button>
     </div>
