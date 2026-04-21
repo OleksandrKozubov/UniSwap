@@ -12,10 +12,12 @@ app.use(cors({
   origin: "http://localhost:3000"
 }));
 
+// Simple health check so the frontend or a browser can confirm the API is up.
 app.get("/", (req, res) => {
   res.send("UniSwap backend running");
 });
 
+// Return every listing so the home page can render the marketplace feed.
 app.get("/listings", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM listings");
@@ -26,6 +28,7 @@ app.get("/listings", async (req, res) => {
   }
 });
 
+// Return one listing by id for the details and edit pages.
 app.get("/listings/:id", async (req, res) => {
   try {
     const result = await pool.query(
@@ -40,6 +43,7 @@ app.get("/listings/:id", async (req, res) => {
   }
 });
 
+// Create a new listing owned by the user who submitted it.
 app.post("/listings", async (req, res) => {
   const { title, description, price, userId } = req.body;
 
@@ -63,6 +67,7 @@ app.post("/listings", async (req, res) => {
   }
 });
 
+// Update an existing listing, but only if the requesting user owns it.
 app.put("/listings/:id", async (req, res) => {
   const { title, description, price, userId } = req.body;
 
@@ -87,6 +92,7 @@ app.put("/listings/:id", async (req, res) => {
   }
 });
 
+// Delete a listing when the matching owner sends the request.
 app.delete("/listings/:id", async (req, res) => {
   const { userId } = req.body;
 
@@ -109,6 +115,7 @@ app.delete("/listings/:id", async (req, res) => {
   }
 });
 
+// Update the signed-in user's profile fields shown on the profile page.
 app.post("/update-profile", async (req, res) => {
   const { userId, name, university } = req.body;
 
@@ -125,6 +132,7 @@ app.post("/update-profile", async (req, res) => {
   }
 });
 
+// Verify the old password before saving a newly hashed password.
 app.post("/change-password", async (req, res) => {
   const { userId, oldPassword, newPassword } = req.body;
 
@@ -165,6 +173,7 @@ app.post("/change-password", async (req, res) => {
   }
 });
 
+// Register a new user account and store the password securely as a hash.
 app.post("/register", async (req, res) => {
   const { email, name, university, password } = req.body;
 
@@ -188,6 +197,7 @@ if (!email || !name || !university || !password) {
   }
 });
 
+// Log a user in by checking the password and returning a signed JWT.
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -236,6 +246,7 @@ if (!email || !password) {
   }
 });
 
+// Start the Express server on the port used by the frontend during local development.
 app.listen(5001, () => {
   console.log("Server running on port 5001");
 });

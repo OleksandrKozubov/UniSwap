@@ -8,12 +8,14 @@ const pageStyle = {
   padding: "20px"
 };
 
+// ListingDetails loads one listing and exposes owner-only actions like edit and delete.
 function ListingDetails() {
   const { id } = useParams();
   const [listing, setListing] = useState(null);
   const user = JSON.parse(localStorage.getItem("user"));
 
 const handleDelete = async () => {
+  // The backend checks the userId before allowing a delete.
   const res = await fetch(`http://localhost:5001/listings/${listing.id}`, {
     method: "DELETE",
     headers: {

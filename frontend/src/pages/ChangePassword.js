@@ -16,6 +16,7 @@ const inputStyle = {
   padding: "10px"
 };
 
+// ChangePassword verifies the new password twice before sending the update request.
 function ChangePassword() {
   const user = JSON.parse(localStorage.getItem("user"));
   const [oldPassword, setOldPassword] = useState("");

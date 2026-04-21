@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Login collects credentials, sends them to the backend, and redirects on success.
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,6 +24,7 @@ function Login() {
   };
 
   const handleLogin = async () => {
+    // Stop early so the API is only called when both fields are filled in.
     if (!email || !password) {
   alert("Please enter email and password");
   return;

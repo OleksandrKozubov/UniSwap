@@ -9,9 +9,11 @@ import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
 import EditListing from "./pages/EditListing";
 
+// App maps each route to the page component for that part of the marketplace flow.
 function App() {
   return (
     <Router>
+      {/* Each route renders a full page inside the single-page app. */}
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/home" element={<Home />} />

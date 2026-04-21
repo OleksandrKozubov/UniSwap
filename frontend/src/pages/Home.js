@@ -15,11 +15,13 @@ const pageStyle = {
 
 const token = localStorage.getItem("token");
 
+// Home loads all listings and greets the signed-in user from local storage.
 function Home() {
   const [listings, setListings] = useState([]);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    // Fetch marketplace data and restore the cached user when the page opens.
     fetch("http://localhost:5001/listings")
       .then(res => res.json())
       .then(data => setListings(data));
@@ -38,10 +40,14 @@ function Home() {
   >
     Welcome, {user?.name}
   </div>
-   </div>
+      </div>
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         {listings.map(listing => (
-          <ListingCard key={listing.id} listing={listing} />
+          <ListingCard
+            key={listing.id}
+            listing={listing}
+            isOwner={user?.id === listing.user_id}
+          />
         ))}
       </div>
       <button

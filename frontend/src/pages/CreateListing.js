@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+// CreateListing gathers the listing fields and posts a new item for the current user.
 function CreateListing() {
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -15,6 +16,7 @@ function CreateListing() {
   };
   
   const handleSubmit = async () => {
+    // Require the minimum fields before attempting to create the listing.
     if (!title || !price) {
       alert("Title and price required");
       return;

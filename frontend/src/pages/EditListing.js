@@ -8,6 +8,7 @@ const pageStyle = {
   padding: "20px"
 };
 
+// EditListing preloads an existing listing and saves owner-approved changes.
 function EditListing() {
   const { id } = useParams();
   const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -16,12 +17,12 @@ function EditListing() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
 
-  // Load existing listing
+  // Load the current listing values before showing the edit form.
   useEffect(() => {
     fetch(`http://localhost:5001/listings/${id}`)
       .then(res => res.json())
       .then(data => {
-        // 🔒 Protect: only owner can edit
+        // Redirect away if someone other than the owner opens this page.
         if (data.user_id !== user.id) {
           alert("Not allowed");
           window.location.href = "/home";
@@ -34,7 +35,7 @@ function EditListing() {
       });
   }, [id]);
 
-  // Update listing
+  // Save the edited fields back to the backend.
   const handleUpdate = async () => {
     if (!title || !price) {
       alert("Title and price required");

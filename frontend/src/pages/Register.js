@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+// Register collects the required account fields before creating a new user.
 function Register() {
   const [form, setForm] = useState({
     email: "",
@@ -25,6 +26,7 @@ function Register() {
   };
 
   const handleSubmit = async () => {
+    // Keep the request from being sent with missing profile information.
     if (!form.email || !form.name || !form.university || !form.password) {
   alert("All fields are required");
   return;

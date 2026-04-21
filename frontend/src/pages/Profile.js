@@ -7,6 +7,7 @@ const pageStyle = {
   padding: "20px"
 };
 
+// Profile shows stored account details and lets the user update basic info.
 function Profile() {
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -20,6 +21,7 @@ function Profile() {
   };
 
   const handleUpdate = async () => {
+    // Send the edited profile fields for the currently signed-in user.
     await fetch("http://localhost:5001/update-profile", {
       method: "POST",
       headers: {
