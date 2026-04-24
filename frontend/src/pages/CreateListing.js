@@ -9,7 +9,7 @@ function CreateListing() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]); //Holds multiple images now
 
   const pageStyle = {
     minHeight: "100vh",
@@ -20,19 +20,21 @@ function CreateListing() {
   
   const handleSubmit = async () => {
     // Require the minimum fields before attempting to create the listing.
-    let imageUrl = "";
+let imageUrls = [];
 
-    if (image) {
-      const formData = new FormData();
-      formData.append("image", image);
+if (images.length > 0) {
+  for (let file of images) {
+    const formData = new FormData();
+    formData.append("image", file);
 
-      const uploadRes = await fetch("http://localhost:5001/upload", {
-        method: "POST",
-        body: formData
-      });
+    const res = await fetch("http://localhost:5001/upload", {
+      method: "POST",
+      body: formData
+    });
 
-  const uploadData = await uploadRes.json();
-  imageUrl = uploadData.imageUrl;
+    const data = await res.json();
+    imageUrls.push(data.imageUrl);
+  }
 }
     if (!title || !price) {
       alert("Title and price required");
@@ -50,7 +52,7 @@ function CreateListing() {
         price,
         userId: user.id,
         location,
-        imageUrl
+        imageUrls //urlS
       })
     });
 
@@ -77,7 +79,8 @@ function CreateListing() {
       <textarea placeholder="Description" onChange={e => setDescription(e.target.value)} />
       <input
   type="file"
-  onChange={e => setImage(e.target.files[0])}
+  multiple //For multiple images
+  onChange={e => setImages(e.target.files)}
 />
         <select
   value={location}

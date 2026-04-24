@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
 import Map from "../components/Map";
+import { getListingImageUrls } from "../utils/listingImages";
 
 const pageStyle = {
   minHeight: "100vh",
@@ -25,7 +26,33 @@ function Home() {
     // Fetch marketplace data and restore the cached user when the page opens.
     fetch("http://localhost:5001/listings")
       .then(res => res.json())
-      .then(data => setListings(data));
+      .then(async data => {
+        const hydratedListings = await Promise.all(
+          data.map(async listing => {
+            if (getListingImageUrls(listing).length > 0) {
+              return listing;
+            }
+
+            const detailsRes = await fetch(
+              `http://localhost:5001/listings/${listing.id}`
+            );
+
+            if (!detailsRes.ok) {
+              return listing;
+            }
+
+            const details = await detailsRes.json();
+
+            return {
+              ...listing,
+              ...details,
+              images: details.images || listing.images
+            };
+          })
+        );
+
+        setListings(hydratedListings);
+      });
     const storedUser = JSON.parse(localStorage.getItem("user") || "null");
     setUser(storedUser);
   }, []);

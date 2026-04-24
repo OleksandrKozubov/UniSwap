@@ -23,49 +23,83 @@ app.get("/", (req, res) => {
   res.send("UniSwap backend running");
 });
 
+async function getListingImages(listing) {
+  const images = await pool.query(
+    "SELECT image_url FROM listing_images WHERE listing_id = $1 ORDER BY id ASC",
+    [listing.id]
+  );
+
+  if (images.rows.length > 0) {
+    return images.rows;
+  }
+
+  if (listing.image_url) {
+    return [{ image_url: listing.image_url }];
+  }
+
+  return [];
+}
+
 // Return every listing so the home page can render the marketplace feed.
 app.get("/listings", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM listings");
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Database error");
+  const listings = await pool.query("SELECT * FROM listings");
+
+  const result = [];
+
+  for (let listing of listings.rows) {
+    result.push({
+      ...listing,
+      images: await getListingImages(listing)
+    });
   }
+  res.json(result);
 });
 
 // Return one listing by id for the details and edit pages.
 app.get("/listings/:id", async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT * FROM listings WHERE id = $1",
-      [req.params.id]
-    );
+  const listing = await pool.query(
+    "SELECT * FROM listings WHERE id = $1",
+    [req.params.id]
+  );
+  const listingRow = listing.rows[0];
 
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error fetching listing");
+  if (!listingRow) {
+    return res.status(404).json({ error: "Listing not found" });
   }
+
+  res.json({
+    ...listingRow,
+    images: await getListingImages(listingRow)
+  });
 });
 
 // Create a new listing owned by the user who submitted it.
 app.post("/listings", async (req, res) => {
-  const { title, description, price, userId, location, imageUrl } = req.body;
-
-  if (!title || !price || !userId) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
+  const { title, description, price, userId, location, imageUrls } = req.body;
 
   try {
-    const result = await pool.query(
-      `INSERT INTO listings (title, description, price, user_id, location, image_url)
-       VALUES ($1, $2, $3, $4, $5, $6)
+    // Create listing
+    const listingResult = await pool.query(
+      `INSERT INTO listings (title, description, price, user_id, location)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [title, description, price, userId, location, imageUrl]
+      [title, description, price, userId, location]
     );
 
-    res.json(result.rows[0]);
+    const listing = listingResult.rows[0];
+
+    // Insert images
+    if (imageUrls && imageUrls.length > 0) {
+      for (let url of imageUrls) {
+        await pool.query(
+          `INSERT INTO listing_images (listing_id, image_url)
+           VALUES ($1, $2)`,
+          [listing.id, url]
+        );
+      }
+    }
+
+    res.json(listing);
 
   } catch (err) {
     console.error(err);
