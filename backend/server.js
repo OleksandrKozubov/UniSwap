@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("./db");
 const express = require("express");
 const cors = require("cors");
+const upload = require("./multer");
 
 
 const app = express();
@@ -12,6 +13,10 @@ app.use(express.json());
 app.use(cors({
   origin: "http://localhost:3000"
 }));
+
+app.post("/upload", upload.single("image"), (req, res) => {
+  res.json({ imageUrl: req.file.path });
+});
 
 // Simple health check so the frontend or a browser can confirm the API is up.
 app.get("/", (req, res) => {
@@ -46,7 +51,7 @@ app.get("/listings/:id", async (req, res) => {
 
 // Create a new listing owned by the user who submitted it.
 app.post("/listings", async (req, res) => {
-  const { title, description, price, userId, location } = req.body;
+  const { title, description, price, userId, location, imageUrl } = req.body;
 
   if (!title || !price || !userId) {
     return res.status(400).json({ error: "Missing fields" });
@@ -54,10 +59,10 @@ app.post("/listings", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO listings (title, description, price, user_id, location)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO listings (title, description, price, user_id, location, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [title, description, price, userId, location]
+      [title, description, price, userId, location, imageUrl]
     );
 
     res.json(result.rows[0]);

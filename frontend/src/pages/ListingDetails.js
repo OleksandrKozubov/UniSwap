@@ -59,6 +59,11 @@ const handleDelete = async () => {
         <button onClick={() => window.location.href = "/home"}>
   Back
 </button>
+<img
+  src={listing.image_url}
+  alt="listing"
+  style={{ width: "100%", maxHeight: "300px", objectFit: "cover" }}
+/>
       <h2>{listing.title}</h2>
 
       <h3>${listing.price}</h3>

@@ -24,7 +24,11 @@ function ListingCard({ listing, isOwner }) {
           Your listing
         </span>
       )}
-
+<img
+  src={listing.image_url}
+  alt="listing"
+  style={{ width: "100%", height: "150px", objectFit: "cover" }}
+/>
       <h3>{listing.title}</h3>
       <p>${listing.price}</p>
 
