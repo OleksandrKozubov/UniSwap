@@ -55,6 +55,20 @@ app.get("/listings", async (req, res) => {
   res.json(result);
 });
 
+app.delete("/listing-images/:id", async (req, res) => {
+  try {
+    await pool.query(
+      "DELETE FROM listing_images WHERE id = $1",
+      [req.params.id]
+    );
+
+    res.json({ message: "Image deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error deleting image" });
+  }
+});
+
 // Return one listing by id for the details and edit pages.
 app.get("/listings/:id", async (req, res) => {
   const listing = await pool.query(
@@ -109,19 +123,29 @@ app.post("/listings", async (req, res) => {
 
 // Update an existing listing, but only if the requesting user owns it.
 app.put("/listings/:id", async (req, res) => {
-  const { title, description, price, userId } = req.body;
+  const { title, description, price, userId, location, imageUrls } = req.body;
 
   try {
     const result = await pool.query(
       `UPDATE listings
-       SET title=$1, description=$2, price=$3
-       WHERE id=$4 AND user_id=$5
+       SET title=$1, description=$2, price=$3, location=$4
+       WHERE id=$5 AND user_id=$6
        RETURNING *`,
-      [title, description, price, req.params.id, userId]
+      [title, description, price, location, req.params.id, userId]
     );
 
     if (result.rows.length === 0) {
       return res.status(403).json({ error: "Not allowed" });
+    }
+
+    // ADD NEW IMAGES
+    if (imageUrls && imageUrls.length > 0) {
+      for (let url of imageUrls) {
+        await pool.query(
+          "INSERT INTO listing_images (listing_id, image_url) VALUES ($1, $2)",
+          [req.params.id, url]
+        );
+      }
     }
 
     res.json(result.rows[0]);
