@@ -96,6 +96,14 @@ function ListingDetails() {
         <Map lat={selectedLocation.lat} lng={selectedLocation.lng} />
       )}
 
+      <button
+  onClick={() =>
+    window.location.href = `/chat/${listing.id}/${listing.user_id}`
+  }
+>
+  Contact Seller
+</button>
+
       {user?.id === listing.user_id && (
         <>
           <button onClick={handleDelete}>Delete</button>

@@ -4,9 +4,58 @@ const pool = require("./db");
 const express = require("express");
 const cors = require("cors");
 const upload = require("./multer");
-
+const http = require("http");        
+const { Server } = require("socket.io");  
 
 const app = express();
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000"
+  }
+});
+
+io.on("connection", (socket) => {
+
+  console.log("User connected:", socket.id);
+
+  socket.on("join_chat", ({ listingId }) => {
+
+    socket.join(`listing_${listingId}`);
+
+  });
+
+  socket.on("send_message", async (data) => {
+
+    const { senderId, receiverId, listingId, text } = data;
+
+    const result = await pool.query(
+
+      `INSERT INTO messages (sender_id, receiver_id, listing_id, text)
+
+       VALUES ($1, $2, $3, $4)
+
+       RETURNING *`,
+
+      [senderId, receiverId, listingId, text]
+
+    );
+
+    const message = result.rows[0];
+
+    io.to(`listing_${listingId}`).emit("receive_message", message);
+
+  });
+
+  socket.on("disconnect", () => {
+
+    console.log("User disconnected");
+
+  });
+
+});
 
 app.use(express.json());
 
@@ -16,6 +65,17 @@ app.use(cors({
 
 app.post("/upload", upload.single("image"), (req, res) => {
   res.json({ imageUrl: req.file.path });
+});
+
+app.get("/messages/:listingId", async (req, res) => {
+  const result = await pool.query(
+    `SELECT * FROM messages
+     WHERE listing_id = $1
+     ORDER BY created_at ASC`,
+    [req.params.listingId]
+  );
+
+  res.json(result.rows);
 });
 
 // Simple health check so the frontend or a browser can confirm the API is up.
@@ -44,6 +104,17 @@ async function getListingImages(listing) {
 
   return images;
 }
+
+app.get("/messages/:listingId", async (req, res) => {
+  const result = await pool.query(
+    `SELECT * FROM messages
+     WHERE listing_id = $1
+     ORDER BY created_at ASC`,
+    [req.params.listingId]
+  );
+
+  res.json(result.rows);
+});
 
 app.get("/categories", async (req, res) => {
   try {
@@ -441,6 +512,6 @@ if (!email || !password) {
 });
 
 // Start the Express server on the port used by the frontend during local development.
-app.listen(5001, () => {
+server.listen(5001, () => {
   console.log("Server running on port 5001");
 });
