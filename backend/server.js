@@ -24,35 +24,145 @@ app.get("/", (req, res) => {
 });
 
 async function getListingImages(listing) {
-  const images = await pool.query(
-    "SELECT image_url FROM listing_images WHERE listing_id = $1 ORDER BY id ASC",
+  const imageRows = await pool.query(
+    "SELECT id, image_url FROM listing_images WHERE listing_id = $1 ORDER BY id ASC",
     [listing.id]
   );
 
-  if (images.rows.length > 0) {
-    return images.rows;
+  const images = [...imageRows.rows];
+
+  if (
+    listing.image_url &&
+    !images.some(image => image.image_url === listing.image_url)
+  ) {
+    images.unshift({
+      id: `legacy-${listing.id}`,
+      image_url: listing.image_url,
+      is_legacy: true
+    });
   }
 
-  if (listing.image_url) {
-    return [{ image_url: listing.image_url }];
-  }
-
-  return [];
+  return images;
 }
 
 // Return every listing so the home page can render the marketplace feed.
 app.get("/listings", async (req, res) => {
-  const listings = await pool.query("SELECT * FROM listings");
+  const { search, category, location, minPrice, maxPrice, sort } = req.query;
 
-  const result = [];
+  let query = "SELECT * FROM listings WHERE 1=1";
+  let values = [];
 
-  for (let listing of listings.rows) {
-    result.push({
-      ...listing,
-      images: await getListingImages(listing)
-    });
+  // SEARCH (title)
+  if (search) {
+    values.push(`%${search}%`);
+    query += ` AND title ILIKE $${values.length}`;
   }
-  res.json(result);
+
+  // CATEGORY
+  if (category) {
+    values.push(category);
+    query += ` AND category = $${values.length}`;
+  }
+
+  // LOCATION
+  if (location) {
+    values.push(location);
+    query += ` AND location = $${values.length}`;
+  }
+
+  // PRICE RANGE
+  if (minPrice) {
+    values.push(minPrice);
+    query += ` AND price >= $${values.length}`;
+  }
+
+  if (maxPrice) {
+    values.push(maxPrice);
+    query += ` AND price <= $${values.length}`;
+  }
+
+  if (sort === "priceAsc") {
+    query += " ORDER BY price ASC, created_at DESC";
+  } else if (sort === "priceDesc") {
+    query += " ORDER BY price DESC, created_at DESC";
+  } else {
+    query += " ORDER BY created_at DESC";
+  }
+
+  try {
+    const listings = await pool.query(query, values);
+
+    const result = [];
+
+    for (let listing of listings.rows) {
+      result.push({
+        ...listing,
+        images: await getListingImages(listing)
+      });
+    }
+
+    res.json(result);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching listings" });
+  }
+});
+
+app.delete("/listings/:listingId/images", async (req, res) => {
+  const { userId, imageId, imageUrl } = req.body;
+
+  try {
+    const ownerCheck = await pool.query(
+      "SELECT image_url FROM listings WHERE id = $1 AND user_id = $2",
+      [req.params.listingId, userId]
+    );
+
+    if (ownerCheck.rows.length === 0) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    let removed = false;
+
+    if (imageId && !String(imageId).startsWith("legacy-")) {
+      const deletedImage = await pool.query(
+        "DELETE FROM listing_images WHERE id = $1 AND listing_id = $2 RETURNING id",
+        [imageId, req.params.listingId]
+      );
+
+      removed = deletedImage.rowCount > 0;
+    }
+
+    if (imageUrl) {
+      const deletedLegacyImage = await pool.query(
+        `UPDATE listings
+         SET image_url = NULL
+         WHERE id = $1 AND user_id = $2 AND image_url = $3
+         RETURNING id`,
+        [req.params.listingId, userId, imageUrl]
+      );
+
+      removed = deletedLegacyImage.rowCount > 0 || removed;
+
+      if (!imageId || String(imageId).startsWith("legacy-")) {
+        const deletedMatchingRows = await pool.query(
+          "DELETE FROM listing_images WHERE listing_id = $1 AND image_url = $2 RETURNING id",
+          [req.params.listingId, imageUrl]
+        );
+
+        removed = deletedMatchingRows.rowCount > 0 || removed;
+      }
+    }
+
+    if (!removed) {
+      return res.status(404).json({ error: "Image not found" });
+    }
+
+    res.json({ message: "Image deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error deleting image" });
+  }
 });
 
 app.delete("/listing-images/:id", async (req, res) => {

@@ -6,6 +6,7 @@ import {
   getListingImageUrls,
   listingPlaceholderImage
 } from "../utils/listingImages";
+import { formatPrice } from "../utils/formatPrice";
 
 const pageStyle = {
   minHeight: "100vh",
@@ -83,7 +84,7 @@ function ListingDetails() {
       </div>
       <h2>{listing.title}</h2>
 
-      <h3>${listing.price}</h3>
+      <h3>{formatPrice(listing.price)}</h3>
 
       <p>{listing.description}</p>
 

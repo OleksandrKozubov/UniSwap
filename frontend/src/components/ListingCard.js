@@ -3,12 +3,15 @@ import {
   getListingImageUrls,
   listingPlaceholderImage
 } from "../utils/listingImages";
+import { formatPrice } from "../utils/formatPrice";
+import { formatListingDate } from "../utils/formatListingDate";
 
 // ListingCard shows a quick preview and links to the full listing page.
 function ListingCard({ listing, isOwner }) {
   const imageUrls = getListingImageUrls(listing);
   const firstImage = imageUrls[0] || listingPlaceholderImage;
   const photoCount = imageUrls.length;
+  const listedAt = formatListingDate(listing.created_at);
 
   return (
     <div style={{
@@ -59,11 +62,27 @@ function ListingCard({ listing, isOwner }) {
         )}
       </div>
       <h3>{listing.title}</h3>
-      <p>${listing.price}</p>
-
-      <Link to={`/listing/${listing.id}`}>
-        View Details
-      </Link>
+      <p>{formatPrice(listing.price)}</p>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: "8px"
+      }}>
+        <Link to={`/listing/${listing.id}`}>
+          View Details
+        </Link>
+        {listedAt && (
+          <span style={{
+            fontSize: "11px",
+            color: "#777",
+            marginLeft: "auto",
+            textAlign: "right"
+          }}>
+            {listedAt}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

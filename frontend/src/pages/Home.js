@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
-import Map from "../components/Map";
-import { getListingImageUrls } from "../utils/listingImages";
+import locations from "../data/locations";
 
 const pageStyle = {
   minHeight: "100vh",
@@ -15,47 +14,45 @@ const pageStyle = {
 //   alert("Logged out");
 // };
 
-const token = localStorage.getItem("token");
-
 // Home loads all listings and greets the signed-in user from local storage.
 function Home() {
   const [listings, setListings] = useState([]);
   const [user, setUser] = useState(null);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
-    // Fetch marketplace data and restore the cached user when the page opens.
-    fetch("http://localhost:5001/listings")
-      .then(res => res.json())
-      .then(async data => {
-        const hydratedListings = await Promise.all(
-          data.map(async listing => {
-            if (getListingImageUrls(listing).length > 0) {
-              return listing;
-            }
-
-            const detailsRes = await fetch(
-              `http://localhost:5001/listings/${listing.id}`
-            );
-
-            if (!detailsRes.ok) {
-              return listing;
-            }
-
-            const details = await detailsRes.json();
-
-            return {
-              ...listing,
-              ...details,
-              images: details.images || listing.images
-            };
-          })
-        );
-
-        setListings(hydratedListings);
-      });
     const storedUser = JSON.parse(localStorage.getItem("user") || "null");
     setUser(storedUser);
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (search) params.append("search", search);
+    if (category) params.append("category", category);
+    if (location) params.append("location", location);
+    if (minPrice) params.append("minPrice", minPrice);
+    if (maxPrice) params.append("maxPrice", maxPrice);
+    params.append("sort", sortBy);
+
+    fetch(`http://localhost:5001/listings?${params.toString()}`)
+      .then(res => res.json())
+      .then(data => setListings(data));
+  }, [search, category, location, minPrice, maxPrice, sortBy]);
+
+  const resetFilters = () => {
+    setSearch("");
+    setCategory("");
+    setLocation("");
+    setMinPrice("");
+    setMaxPrice("");
+    setSortBy("newest");
+  };
 
   return (
     <div style={pageStyle}>
@@ -68,6 +65,60 @@ function Home() {
   >
     Welcome, {user?.name}
   </div>
+      </div>
+      <div style={{ marginBottom: "20px" }}>
+        <input
+          placeholder="Search..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+
+        <select
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+        >
+          <option value="">All Categories</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Books">Books</option>
+          <option value="Furniture">Furniture</option>
+        </select>
+
+        <select
+          value={location}
+          onChange={e => setLocation(e.target.value)}
+        >
+          <option value="">All Locations</option>
+          {locations.map(loc => (
+            <option key={loc.name} value={loc.name}>
+              {loc.name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="number"
+          placeholder="Min price"
+          value={minPrice}
+          onChange={e => setMinPrice(e.target.value)}
+        />
+
+        <input
+          type="number"
+          placeholder="Max price"
+          value={maxPrice}
+          onChange={e => setMaxPrice(e.target.value)}
+        />
+
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value)}
+        >
+          <option value="newest">Newest first</option>
+          <option value="priceAsc">Price: low to high</option>
+          <option value="priceDesc">Price: high to low</option>
+        </select>
+
+        <button onClick={resetFilters}>Reset Filters</button>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         {listings.map(listing => (

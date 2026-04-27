@@ -13,22 +13,27 @@ const pageStyle = {
 function EditListing() {
   const { id } = useParams();
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  const userId = user?.id;
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
 
   // Load the current listing values before showing the edit form.
   useEffect(() => {
+    if (!userId) {
+      window.location.href = "/login";
+      return;
+    }
+
     fetch(`http://localhost:5001/listings/${id}`)
       .then(res => res.json())
       .then(data => {
         // Redirect away if someone other than the owner opens this page.
-        if (data.user_id !== user.id) {
+        if (data.user_id !== userId) {
           alert("Not allowed");
           window.location.href = "/home";
           return;
@@ -37,49 +42,39 @@ function EditListing() {
         setTitle(data.title);
         setPrice(data.price);
         setDescription(data.description);
-        setSelectedLocation(data.location);
+        setSelectedLocation(data.location || "");
         setExistingImages(data.images || []);
       });
-  }, [id]);
+  }, [id, userId]);
 
   // Save the edited fields back to the backend.
   const handleUpdate = async () => {
-
-    let imageUrls = [];
-
-if (newImages.length > 0) {
-  for (let file of newImages) {
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const res = await fetch("http://localhost:5001/upload", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await res.json();
-    imageUrls.push(data.imageUrl);
-  }
-}
-
-await fetch(`http://localhost:5001/listings/${id}`, {
-  method: "PUT",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    title,
-    description,
-    price,
-    location: selectedLocation,
-    userId: user.id,
-    imageUrls
-  })
-});
-
     if (!title || !price) {
       alert("Title and price required");
       return;
+    }
+
+    let imageUrls = [];
+
+    if (newImages.length > 0) {
+      for (let file of newImages) {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const uploadRes = await fetch("http://localhost:5001/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        const uploadData = await uploadRes.json();
+
+        if (!uploadRes.ok) {
+          alert(uploadData.error || "Image upload failed");
+          return;
+        }
+
+        imageUrls.push(uploadData.imageUrl);
+      }
     }
 
     const res = await fetch(`http://localhost:5001/listings/${id}`, {
@@ -91,7 +86,9 @@ await fetch(`http://localhost:5001/listings/${id}`, {
         title,
         description,
         price,
-        userId: user.id
+        location: selectedLocation,
+        imageUrls,
+        userId
       })
     });
 
@@ -108,26 +105,46 @@ await fetch(`http://localhost:5001/listings/${id}`, {
 
   return (
     <div style={pageStyle}>
+       <button onClick={() => window.location.href = "/home"}>
+        Back
+      </button>
       <h2>Edit Listing</h2>
 
       <h3>Current Images</h3>
 
 <div style={{ display: "flex", gap: "10px" }}>
   {existingImages.map(img => (
-    <div key={img.id}>
+    <div key={img.id || img.image_url}>
       <img
         src={img.image_url}
+        alt={title}
         style={{ width: "100px", height: "80px" }}
       />
 
       <button
         onClick={async () => {
-          await fetch(`http://localhost:5001/listing-images/${img.id}`, {
-            method: "DELETE"
+          const res = await fetch(`http://localhost:5001/listings/${id}/images`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              userId,
+              imageId: img.id,
+              imageUrl: img.image_url
+            })
           });
 
+          if (!res.ok) {
+            const data = await res.json();
+            alert(data.error || "Image delete failed");
+            return;
+          }
+
           setExistingImages(prev =>
-            prev.filter(i => i.id !== img.id)
+            prev.filter(image =>
+              image.id !== img.id && image.image_url !== img.image_url
+            )
           );
         }}
       >
@@ -142,7 +159,7 @@ await fetch(`http://localhost:5001/listings/${id}`, {
 <input
   type="file"
   multiple
-  onChange={e => setNewImages(e.target.files)}
+  onChange={e => setNewImages(Array.from(e.target.files || []))}
 />
 
 <select
