@@ -18,6 +18,7 @@ const pageStyle = {
 function Home() {
   const [listings, setListings] = useState([]);
   const [user, setUser] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
@@ -28,6 +29,10 @@ function Home() {
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "null");
     setUser(storedUser);
+
+    fetch("http://localhost:5001/categories")
+      .then(res => res.json())
+      .then(data => setCategories(data));
   }, []);
 
   useEffect(() => {
@@ -78,9 +83,11 @@ function Home() {
           onChange={e => setCategory(e.target.value)}
         >
           <option value="">All Categories</option>
-          <option value="Electronics">Electronics</option>
-          <option value="Books">Books</option>
-          <option value="Furniture">Furniture</option>
+          {categories.map(categoryOption => (
+            <option key={categoryOption.id} value={categoryOption.id}>
+              {categoryOption.name}
+            </option>
+          ))}
         </select>
 
         <select

@@ -19,8 +19,16 @@ function EditListing() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:5001/categories")
+      .then(res => res.json())
+      .then(data => setCategories(data));
+  }, []);
 
   // Load the current listing values before showing the edit form.
   useEffect(() => {
@@ -43,6 +51,7 @@ function EditListing() {
         setPrice(data.price);
         setDescription(data.description);
         setSelectedLocation(data.location || "");
+        setSelectedCategoryId(String(data.category_id || ""));
         setExistingImages(data.images || []);
       });
   }, [id, userId]);
@@ -87,6 +96,7 @@ function EditListing() {
         description,
         price,
         location: selectedLocation,
+        categoryId: selectedCategoryId,
         imageUrls,
         userId
       })
@@ -161,6 +171,18 @@ function EditListing() {
   multiple
   onChange={e => setNewImages(Array.from(e.target.files || []))}
 />
+
+<select
+  value={selectedCategoryId}
+  onChange={e => setSelectedCategoryId(e.target.value)}
+>
+  <option value="">Select category</option>
+  {categories.map(category => (
+    <option key={category.id} value={category.id}>
+      {category.name}
+    </option>
+  ))}
+</select>
 
 <select
   value={selectedLocation}

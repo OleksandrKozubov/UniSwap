@@ -88,6 +88,8 @@ function ListingDetails() {
 
       <p>{listing.description}</p>
 
+      <p>Category: {listing.category_name || "Uncategorized"}</p>
+
       <p>Location: {listing.location}</p>
 
       {selectedLocation && (

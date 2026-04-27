@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import locations from "../data/locations";
 
 // CreateListing gathers the listing fields and posts a new item for the current user.
@@ -10,6 +10,8 @@ function CreateListing() {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [images, setImages] = useState([]); //Holds multiple images now
+  const [categories, setCategories] = useState([]);
+  const [categoryId, setCategoryId] = useState("");
 
   const pageStyle = {
     minHeight: "100vh",
@@ -17,6 +19,12 @@ function CreateListing() {
   color: "#f5f5f5",
   padding: "20px"
   };
+
+  useEffect(() => {
+    fetch("http://localhost:5001/categories")
+      .then(res => res.json())
+      .then(data => setCategories(data));
+  }, []);
   
   const handleSubmit = async () => {
     // Require the minimum fields before attempting to create the listing.
@@ -52,6 +60,7 @@ if (images.length > 0) {
         price,
         userId: user.id,
         location,
+        categoryId,
         imageUrls //urlS
       })
     });
@@ -77,10 +86,21 @@ if (images.length > 0) {
       <input placeholder="Title" onChange={e => setTitle(e.target.value)} />
       <input placeholder="Price" onChange={e => setPrice(e.target.value)} />
       <textarea placeholder="Description" onChange={e => setDescription(e.target.value)} />
+        <select
+  value={categoryId}
+  onChange={e => setCategoryId(e.target.value)}
+>
+  <option value="">Select category</option>
+  {categories.map(cat => (
+    <option key={cat.id} value={cat.id}>
+      {cat.name}
+    </option>
+  ))}
+</select>
       <input
   type="file"
   multiple //For multiple images
-  onChange={e => setImages(e.target.files)}
+  onChange={e => setImages(Array.from(e.target.files || []))}
 />
         <select
   value={location}

@@ -45,11 +45,26 @@ async function getListingImages(listing) {
   return images;
 }
 
+app.get("/categories", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM categories ORDER BY name ASC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching categories" });
+  }
+});
+
 // Return every listing so the home page can render the marketplace feed.
 app.get("/listings", async (req, res) => {
   const { search, category, location, minPrice, maxPrice, sort } = req.query;
 
-  let query = "SELECT * FROM listings WHERE 1=1";
+  let query = `
+    SELECT listings.*, categories.name AS category_name
+    FROM listings
+    LEFT JOIN categories ON categories.id = listings.category_id
+    WHERE 1=1
+  `;
   let values = [];
 
   // SEARCH (title)
@@ -60,33 +75,33 @@ app.get("/listings", async (req, res) => {
 
   // CATEGORY
   if (category) {
-    values.push(category);
-    query += ` AND category = $${values.length}`;
+    values.push(Number(category));
+    query += ` AND listings.category_id = $${values.length}`;
   }
 
   // LOCATION
   if (location) {
     values.push(location);
-    query += ` AND location = $${values.length}`;
+    query += ` AND listings.location = $${values.length}`;
   }
 
   // PRICE RANGE
   if (minPrice) {
     values.push(minPrice);
-    query += ` AND price >= $${values.length}`;
+    query += ` AND listings.price >= $${values.length}`;
   }
 
   if (maxPrice) {
     values.push(maxPrice);
-    query += ` AND price <= $${values.length}`;
+    query += ` AND listings.price <= $${values.length}`;
   }
 
   if (sort === "priceAsc") {
-    query += " ORDER BY price ASC, created_at DESC";
+    query += " ORDER BY listings.price ASC, listings.created_at DESC";
   } else if (sort === "priceDesc") {
-    query += " ORDER BY price DESC, created_at DESC";
+    query += " ORDER BY listings.price DESC, listings.created_at DESC";
   } else {
-    query += " ORDER BY created_at DESC";
+    query += " ORDER BY listings.created_at DESC";
   }
 
   try {
@@ -182,7 +197,10 @@ app.delete("/listing-images/:id", async (req, res) => {
 // Return one listing by id for the details and edit pages.
 app.get("/listings/:id", async (req, res) => {
   const listing = await pool.query(
-    "SELECT * FROM listings WHERE id = $1",
+    `SELECT listings.*, categories.name AS category_name
+     FROM listings
+     LEFT JOIN categories ON categories.id = listings.category_id
+     WHERE listings.id = $1`,
     [req.params.id]
   );
   const listingRow = listing.rows[0];
@@ -199,15 +217,16 @@ app.get("/listings/:id", async (req, res) => {
 
 // Create a new listing owned by the user who submitted it.
 app.post("/listings", async (req, res) => {
-  const { title, description, price, userId, location, imageUrls } = req.body;
+  const { title, description, price, userId, location, imageUrls, categoryId } = req.body;
+  const normalizedCategoryId = categoryId ? Number(categoryId) : null;
 
   try {
     // Create listing
     const listingResult = await pool.query(
-      `INSERT INTO listings (title, description, price, user_id, location)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO listings (title, description, price, user_id, location, category_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [title, description, price, userId, location]
+      [title, description, price, userId, location, normalizedCategoryId]
     );
 
     const listing = listingResult.rows[0];
@@ -233,15 +252,16 @@ app.post("/listings", async (req, res) => {
 
 // Update an existing listing, but only if the requesting user owns it.
 app.put("/listings/:id", async (req, res) => {
-  const { title, description, price, userId, location, imageUrls } = req.body;
+  const { title, description, price, userId, location, imageUrls, categoryId } = req.body;
+  const normalizedCategoryId = categoryId ? Number(categoryId) : null;
 
   try {
     const result = await pool.query(
       `UPDATE listings
-       SET title=$1, description=$2, price=$3, location=$4
-       WHERE id=$5 AND user_id=$6
+       SET title=$1, description=$2, price=$3, location=$4, category_id=$5
+       WHERE id=$6 AND user_id=$7
        RETURNING *`,
-      [title, description, price, location, req.params.id, userId]
+      [title, description, price, location, normalizedCategoryId, req.params.id, userId]
     );
 
     if (result.rows.length === 0) {
