@@ -68,15 +68,72 @@ app.post("/upload", upload.single("image"), (req, res) => {
 });
 
 app.get("/chats/:userId", async (req, res) => {
-  const userId = req.params.userId;
+  const userId = Number(req.params.userId);
 
-  const result = await pool.query(`
-    SELECT DISTINCT listing_id, sender_id, receiver_id
-    FROM messages
-    WHERE sender_id = $1 OR receiver_id = $1
-  `, [userId]);
+  try {
+    const result = await pool.query(
+      `
+        WITH user_chats AS (
+          SELECT
+            listing_id,
+            CASE
+              WHEN sender_id = $1 THEN receiver_id
+              ELSE sender_id
+            END AS other_user_id,
+            receiver_id,
+            is_read,
+            created_at
+          FROM messages
+          WHERE sender_id = $1 OR receiver_id = $1
+        )
+        SELECT
+          user_chats.listing_id,
+          user_chats.other_user_id,
+          listings.title AS listing_title,
+          MAX(user_chats.created_at) AS last_message_at,
+          CAST(
+            COUNT(*) FILTER (
+              WHERE user_chats.receiver_id = $1 AND user_chats.is_read = FALSE
+            ) AS INTEGER
+          ) AS unread_count
+        FROM user_chats
+        LEFT JOIN listings ON listings.id = user_chats.listing_id
+        GROUP BY user_chats.listing_id, user_chats.other_user_id, listings.title
+        ORDER BY MAX(user_chats.created_at) DESC
+      `,
+      [userId]
+    );
 
-  res.json(result.rows);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching chats" });
+  }
+});
+
+app.put("/messages/read", async (req, res) => {
+  const { userId, listingId, otherUserId } = req.body;
+
+  await pool.query(
+    `UPDATE messages
+     SET is_read = TRUE
+     WHERE receiver_id = $1
+     AND sender_id = $2
+     AND listing_id = $3`,
+    [userId, otherUserId, listingId]
+  );
+
+  res.sendStatus(200);
+});
+
+app.get("/messages/unread/:userId", async (req, res) => {
+  const result = await pool.query(
+    `SELECT COUNT(*) FROM messages
+     WHERE receiver_id = $1 AND is_read = FALSE`,
+    [req.params.userId]
+  );
+
+  res.json({ count: result.rows[0].count });
 });
 
 app.get("/messages/:listingId", async (req, res) => {

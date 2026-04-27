@@ -12,6 +12,7 @@ function Chat() {
   const receiver = Number(receiverId);
 
   const [messages, setMessages] = useState([]);
+  const [listingTitle, setListingTitle] = useState("");
   const [text, setText] = useState("");
 
   const messagesEndRef = useRef(null);
@@ -22,25 +23,56 @@ function Chat() {
       alert("You cannot chat with yourself");
       window.location.href = "/home";
     }
-  }, []);
+  }, [receiver, senderId]);
 
   // load messages
   useEffect(() => {
+    const markMessagesRead = () => {
+      fetch("http://localhost:5001/messages/read", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: senderId,
+          listingId,
+          otherUserId: receiver
+        })
+      });
+    };
+
     fetch(`http://localhost:5001/messages/${listingId}`)
       .then(res => res.json())
       .then(data => {
-        // 🔥 filter messages only between these two users
+        // filter messages only between these two users
         const filtered = data.filter(
           msg =>
             (msg.sender_id === senderId && msg.receiver_id === receiver) ||
             (msg.sender_id === receiver && msg.receiver_id === senderId)
         );
         setMessages(filtered);
+        markMessagesRead();
       });
   }, [listingId, senderId, receiver]);
 
+  useEffect(() => {
+    fetch(`http://localhost:5001/listings/${listingId}`)
+      .then(res => res.json())
+      .then(data => setListingTitle(data.title || ""));
+  }, [listingId]);
+
   // socket connection
   useEffect(() => {
+    const markMessagesRead = () => {
+      fetch("http://localhost:5001/messages/read", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: senderId,
+          listingId,
+          otherUserId: receiver
+        })
+      });
+    };
+
     socket.emit("join_chat", { listingId });
 
     socket.on("receive_message", (msg) => {
@@ -50,6 +82,10 @@ function Chat() {
         (msg.sender_id === receiver && msg.receiver_id === senderId)
       ) {
         setMessages(prev => [...prev, msg]);
+
+        if (msg.receiver_id === senderId) {
+          markMessagesRead();
+        }
       }
     });
 
@@ -88,7 +124,7 @@ function Chat() {
         padding: "10px",
         marginBottom: "10px"
       }}>
-        Chat about listing #{listingId}
+        Chat about {listingTitle || `listing #${listingId}`}
       </div>
 
       {/* MESSAGES */}

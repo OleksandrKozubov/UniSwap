@@ -2,18 +2,35 @@ import { useEffect, useState } from "react";
 
 function Chats() {
   const user = JSON.parse(localStorage.getItem("user"));
+  const userId = Number(user?.id);
   const [chats, setChats] = useState([]);
 
   useEffect(() => {
-    fetch(`http://localhost:5001/chats/${user.id}`)
-      .then(res => res.json())
-      .then(data => setChats(data));
-  }, []);
+    if (!userId) {
+      return;
+    }
+
+    const loadChats = () => {
+      fetch(`http://localhost:5001/chats/${userId}`)
+        .then(res => res.json())
+        .then(data => setChats(data));
+    };
+
+    loadChats();
+
+    const intervalId = window.setInterval(loadChats, 10000);
+    window.addEventListener("focus", loadChats);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", loadChats);
+    };
+  }, [userId]);
 
   return (
     <div style={{ padding: "20px" }}>
 
-      {/* 🔙 BACK BUTTON */}
+      {/* BACK BUTTON */}
       <button onClick={() => window.location.href = "/home"}>
         Back
       </button>
@@ -21,25 +38,55 @@ function Chats() {
       <h2>Your Chats</h2>
 
       {chats.map(chat => {
-        const otherUserId =
-          chat.sender_id === user.id
-            ? chat.receiver_id
-            : chat.sender_id;
+        const unreadCount = Number(chat.unread_count) || 0;
 
         return (
           <div
-            key={chat.listing_id + "_" + otherUserId}
+            key={chat.listing_id + "_" + chat.other_user_id}
             style={{
               border: "1px solid gray",
               padding: "10px",
               marginBottom: "10px",
-              cursor: "pointer"
+              cursor: "pointer",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "12px"
             }}
             onClick={() =>
-              window.location.href = `/chat/${chat.listing_id}/${otherUserId}`
+              window.location.href = `/chat/${chat.listing_id}/${chat.other_user_id}`
             }
           >
-            Chat about listing #{chat.listing_id}
+            <div>
+              <div>
+                Chat about {chat.listing_title || `listing #${chat.listing_id}`}
+              </div>
+              <div style={{
+                fontSize: "12px",
+                opacity: 0.7,
+                marginTop: "4px"
+              }}>
+                Listing #{chat.listing_id}
+              </div>
+            </div>
+
+            {unreadCount > 0 && (
+              <span style={{
+                minWidth: "24px",
+                height: "24px",
+                borderRadius: "999px",
+                backgroundColor: "red",
+                color: "white",
+                fontSize: "12px",
+                fontWeight: "bold",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0 8px"
+              }}>
+                {unreadCount}
+              </span>
+            )}
           </div>
         );
       })}

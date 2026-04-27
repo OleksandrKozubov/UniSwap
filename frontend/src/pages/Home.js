@@ -25,6 +25,7 @@ function Home() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "null");
@@ -34,6 +35,31 @@ function Home() {
       .then(res => res.json())
       .then(data => setCategories(data));
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUnread(0);
+      return;
+    }
+
+    const loadUnreadCount = () => {
+      fetch(`http://localhost:5001/messages/unread/${user.id}`)
+        .then(res => res.json())
+        .then(data => setUnread(Number(data.count) || 0));
+    };
+
+    loadUnreadCount();
+
+    const intervalId = window.setInterval(loadUnreadCount, 10000);
+    window.addEventListener("focus", loadUnreadCount);
+    document.addEventListener("visibilitychange", loadUnreadCount);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", loadUnreadCount);
+      document.removeEventListener("visibilitychange", loadUnreadCount);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -63,17 +89,26 @@ function Home() {
     <div style={pageStyle}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
      <h1>UniSwap Marketplace</h1>
- <div
+<div style={{ position: "relative", cursor: "pointer" }}
+     onClick={() => window.location.href = "/chats"}>
 
-    style={{ cursor: "pointer", fontSize: "20px" }}
+  💬
 
-    onClick={() => window.location.href = "/chats"}
-
-  >
-
-    💬
-
-  </div>
+  {unread > 0 && (
+    <span style={{
+      position: "absolute",
+      top: "-5px",
+      right: "-5px",
+      background: "red",
+      color: "white",
+      fontSize: "10px",
+      padding: "2px 5px",
+      borderRadius: "50%"
+    }}>
+      {unread}
+    </span>
+  )}
+</div>
 
   <div
     style={{ cursor: "pointer" }}
