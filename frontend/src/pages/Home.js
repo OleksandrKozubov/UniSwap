@@ -63,6 +63,17 @@ function Home() {
     <div style={pageStyle}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
      <h1>UniSwap Marketplace</h1>
+ <div
+
+    style={{ cursor: "pointer", fontSize: "20px" }}
+
+    onClick={() => window.location.href = "/chats"}
+
+  >
+
+    💬
+
+  </div>
 
   <div
     style={{ cursor: "pointer" }}

@@ -9,6 +9,7 @@ import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
 import EditListing from "./pages/EditListing";
 import Chat from "./pages/Chat";
+import Chats from "./pages/Chats";
 
 // App maps each route to the page component for that part of the marketplace flow.
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/listing/:id/edit" element={<EditListing />} />
         <Route path="/chat/:listingId/:receiverId" element={<Chat />} />
+        <Route path="/chats" element={<Chats />} />
       </Routes>
     </Router>
   );

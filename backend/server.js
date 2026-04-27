@@ -67,6 +67,18 @@ app.post("/upload", upload.single("image"), (req, res) => {
   res.json({ imageUrl: req.file.path });
 });
 
+app.get("/chats/:userId", async (req, res) => {
+  const userId = req.params.userId;
+
+  const result = await pool.query(`
+    SELECT DISTINCT listing_id, sender_id, receiver_id
+    FROM messages
+    WHERE sender_id = $1 OR receiver_id = $1
+  `, [userId]);
+
+  res.json(result.rows);
+});
+
 app.get("/messages/:listingId", async (req, res) => {
   const result = await pool.query(
     `SELECT * FROM messages
