@@ -117,10 +117,9 @@ function Chat() {
       <button onClick={() => window.location.href = "/chats"}>
         Back
       </button>
-
       {/* LISTING BANNER (basic for now) */}
       <div style={{
-        background: "#333",
+        background: "#8e8e8e",
         padding: "10px",
         marginBottom: "10px"
       }}>

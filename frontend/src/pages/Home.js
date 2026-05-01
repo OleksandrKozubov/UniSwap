@@ -92,7 +92,7 @@ function Home() {
 <div style={{ position: "relative", cursor: "pointer" }}
      onClick={() => window.location.href = "/chats"}>
 
-  💬
+  Chats 💬
 
   {unread > 0 && (
     <span style={{

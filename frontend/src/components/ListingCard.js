@@ -12,6 +12,7 @@ function ListingCard({ listing, isOwner }) {
   const firstImage = imageUrls[0] || listingPlaceholderImage;
   const photoCount = imageUrls.length;
   const listedAt = formatListingDate(listing.created_at);
+  const category = listing.category_name || "Uncategorized";
 
   return (
     <div style={{
@@ -21,10 +22,21 @@ function ListingCard({ listing, isOwner }) {
       width: "200px",
       position: "relative"
     }}>
-      {isOwner && (
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "8px" }}>
         <span style={{
           display: "inline-block",
-          marginBottom: "8px",
+          padding: "4px 8px",
+          borderRadius: "999px",
+          backgroundColor: "#4a6cb4",
+          color: "#fff",
+          fontSize: "12px",
+          fontWeight: "bold"
+        }}>
+          {category}
+        </span>
+        {isOwner && (
+        <span style={{
+          display: "inline-block",
           padding: "4px 8px",
           borderRadius: "999px",
           backgroundColor: "#4CAF50",
@@ -35,6 +47,7 @@ function ListingCard({ listing, isOwner }) {
           Your listing
         </span>
       )}
+      </div>
       <div style={{ position: "relative" }}>
         <img
           src={firstImage}
