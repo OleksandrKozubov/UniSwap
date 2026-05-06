@@ -13,6 +13,7 @@ function Chat() {
 
   const [messages, setMessages] = useState([]);
   const [listingTitle, setListingTitle] = useState("");
+  const [otherUser, setOtherUser] = useState(null);
   const [text, setText] = useState("");
 
   const messagesEndRef = useRef(null);
@@ -58,6 +59,12 @@ function Chat() {
       .then(res => res.json())
       .then(data => setListingTitle(data.title || ""));
   }, [listingId]);
+
+  useEffect(() => {
+    fetch(`http://localhost:5001/users/${receiver}`)
+      .then(res => res.json())
+      .then(data => setOtherUser(data));
+  }, [receiver]);
 
   // socket connection
   useEffect(() => {
@@ -124,6 +131,39 @@ function Chat() {
         marginBottom: "10px"
       }}>
         Chat about {listingTitle || `listing #${listingId}`}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          marginBottom: "12px",
+          cursor: otherUser ? "pointer" : "default"
+        }}
+        onClick={() => {
+          if (otherUser?.id) {
+            window.location.href = `/user/${otherUser.id}`;
+          }
+        }}
+      >
+        <img
+          src={otherUser?.avatar_url || "https://via.placeholder.com/44"}
+          alt={otherUser?.name || "User"}
+          style={{
+            width: "44px",
+            height: "44px",
+            borderRadius: "50%",
+            objectFit: "cover"
+          }}
+        />
+        <div>
+          <div style={{ fontSize: "12px", opacity: 0.7, color: "white" }}>
+            Chatting with
+          </div>
+          <div style={{ color: "#9fd0ff" }}>
+            {otherUser?.name || "User"}
+          </div>
+        </div>
       </div>
 
       {/* MESSAGES */}

@@ -57,7 +57,18 @@ function Chats() {
               window.location.href = `/chat/${chat.listing_id}/${chat.other_user_id}`
             }
           >
-            <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <img
+                src={chat.other_user_avatar_url || "https://via.placeholder.com/40"}
+                alt={chat.other_user_name || "User"}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  objectFit: "cover"
+                }}
+              />
+              <div>
               <div>
                 Chat about {chat.listing_title || `listing #${chat.listing_id}`}
               </div>
@@ -66,7 +77,8 @@ function Chats() {
                 opacity: 0.7,
                 marginTop: "4px"
               }}>
-                Listing #{chat.listing_id}
+                {chat.other_user_name || "User"} · Listing #{chat.listing_id}
+              </div>
               </div>
             </div>
 

@@ -13,6 +13,9 @@ function ListingCard({ listing, isOwner }) {
   const photoCount = imageUrls.length;
   const listedAt = formatListingDate(listing.created_at);
   const category = listing.category_name || "Uncategorized";
+  const sellerName = listing.seller_name || "User";
+  const sellerAvatar =
+    listing.seller_avatar_url || "https://via.placeholder.com/40";
 
   return (
     <div style={{
@@ -76,6 +79,30 @@ function ListingCard({ listing, isOwner }) {
       </div>
       <h3>{listing.title}</h3>
       <p>{formatPrice(listing.price)}</p>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          cursor: "pointer",
+          marginBottom: "8px"
+        }}
+        onClick={() => window.location.href = `/user/${listing.user_id}`}
+      >
+        <img
+          src={sellerAvatar}
+          alt={sellerName}
+          style={{
+            width: "28px",
+            height: "28px",
+            borderRadius: "50%",
+            objectFit: "cover"
+          }}
+        />
+        <span style={{ color: "lightblue", fontSize: "14px" }}>
+          Seller: {sellerName}
+        </span>
+      </div>
       <div style={{
         display: "flex",
         justifyContent: "space-between",

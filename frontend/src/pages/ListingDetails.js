@@ -59,6 +59,9 @@ function ListingDetails() {
     loc => loc.name === listing.location
   );
   const imageUrls = getListingImageUrls(listing);
+  const sellerName = listing.seller_name || "User";
+  const sellerAvatar =
+    listing.seller_avatar_url || "https://via.placeholder.com/56";
 
   return (
     <div style={pageStyle}>
@@ -89,6 +92,36 @@ function ListingDetails() {
       <p>{listing.description}</p>
 
       <p>Category: {listing.category_name || "Uncategorized"}</p>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          margin: "14px 0",
+          cursor: "pointer"
+        }}
+        onClick={() => window.location.href = `/user/${listing.user_id}`}
+      >
+        <img
+          src={sellerAvatar}
+          alt={sellerName}
+          style={{
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            objectFit: "cover"
+          }}
+        />
+        <div>
+          <div style={{ fontSize: "12px", opacity: 0.7 }}>
+            Seller
+          </div>
+          <div style={{ color: "#9fd0ff" }}>
+            {sellerName}
+          </div>
+        </div>
+      </div>
 
       <p>Location: {listing.location}</p>
 

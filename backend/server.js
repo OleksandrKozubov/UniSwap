@@ -90,6 +90,8 @@ app.get("/chats/:userId", async (req, res) => {
           user_chats.listing_id,
           user_chats.other_user_id,
           listings.title AS listing_title,
+          other_users.name AS other_user_name,
+          other_users.avatar_url AS other_user_avatar_url,
           MAX(user_chats.created_at) AS last_message_at,
           CAST(
             COUNT(*) FILTER (
@@ -98,7 +100,13 @@ app.get("/chats/:userId", async (req, res) => {
           ) AS unread_count
         FROM user_chats
         LEFT JOIN listings ON listings.id = user_chats.listing_id
-        GROUP BY user_chats.listing_id, user_chats.other_user_id, listings.title
+        LEFT JOIN users AS other_users ON other_users.id = user_chats.other_user_id
+        GROUP BY
+          user_chats.listing_id,
+          user_chats.other_user_id,
+          listings.title,
+          other_users.name,
+          other_users.avatar_url
         ORDER BY MAX(user_chats.created_at) DESC
       `,
       [userId]
@@ -200,9 +208,14 @@ app.get("/listings", async (req, res) => {
   const { search, category, location, minPrice, maxPrice, sort } = req.query;
 
   let query = `
-    SELECT listings.*, categories.name AS category_name
+    SELECT
+      listings.*,
+      categories.name AS category_name,
+      users.name AS seller_name,
+      users.avatar_url AS seller_avatar_url
     FROM listings
     LEFT JOIN categories ON categories.id = listings.category_id
+    LEFT JOIN users ON users.id = listings.user_id
     WHERE 1=1
   `;
   let values = [];
@@ -210,7 +223,7 @@ app.get("/listings", async (req, res) => {
   // SEARCH (title)
   if (search) {
     values.push(`%${search}%`);
-    query += ` AND title ILIKE $${values.length}`;
+    query += ` AND listings.title ILIKE $${values.length}`;
   }
 
   // CATEGORY
@@ -320,6 +333,93 @@ app.delete("/listings/:listingId/images", async (req, res) => {
   }
 });
 
+app.post("/upload-avatar", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file?.path) {
+      return res.status(400).json({ error: "No image uploaded" });
+    }
+
+    res.json({ imageUrl: req.file.path });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
+
+app.get("/users/:id", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, email, name, university, avatar_url
+       FROM users
+       WHERE id = $1`,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching user" });
+  }
+});
+
+app.put("/users/:id", async (req, res) => {
+  const { name, university, avatarUrl } = req.body;
+  const normalizedAvatarUrl = avatarUrl || null;
+
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET name=$1, university=$2, avatar_url=$3
+       WHERE id=$4
+       RETURNING *`,
+      [name, university, normalizedAvatarUrl, req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Profile update failed" });
+  }
+});
+
+app.get("/users/:id/listings", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT
+         listings.*,
+         categories.name AS category_name,
+         users.name AS seller_name,
+         users.avatar_url AS seller_avatar_url
+       FROM listings
+       LEFT JOIN categories ON listings.category_id = categories.id
+       LEFT JOIN users ON users.id = listings.user_id
+       WHERE listings.user_id = $1
+       ORDER BY listings.created_at DESC`,
+      [req.params.id]
+    );
+
+    const listingsWithImages = await Promise.all(
+      result.rows.map(async listing => ({
+        ...listing,
+        images: await getListingImages(listing)
+      }))
+    );
+
+    res.json(listingsWithImages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching user listings" });
+  }
+});
+
 app.delete("/listing-images/:id", async (req, res) => {
   try {
     await pool.query(
@@ -337,9 +437,14 @@ app.delete("/listing-images/:id", async (req, res) => {
 // Return one listing by id for the details and edit pages.
 app.get("/listings/:id", async (req, res) => {
   const listing = await pool.query(
-    `SELECT listings.*, categories.name AS category_name
+    `SELECT
+       listings.*,
+       categories.name AS category_name,
+       users.name AS seller_name,
+       users.avatar_url AS seller_avatar_url
      FROM listings
      LEFT JOIN categories ON categories.id = listings.category_id
+     LEFT JOIN users ON users.id = listings.user_id
      WHERE listings.id = $1`,
     [req.params.id]
   );

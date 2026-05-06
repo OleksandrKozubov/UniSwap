@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 const pageStyle = {
   minHeight: "100vh",
   backgroundColor: "#1a1a1a",
@@ -7,12 +5,9 @@ const pageStyle = {
   padding: "20px"
 };
 
-// Profile shows stored account details and lets the user update basic info.
 function Profile() {
-  const user = JSON.parse(localStorage.getItem("user"));
 
-  const [name, setName] = useState(user.name);
-  const [university, setUniversity] = useState("");
+  const user = JSON.parse(localStorage.getItem("user"));
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -20,52 +15,46 @@ function Profile() {
     window.location.href = "/";
   };
 
-  const handleUpdate = async () => {
-    // Send the edited profile fields for the currently signed-in user.
-    await fetch("http://localhost:5001/update-profile", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        userId: user.id,
-        name,
-        university
-      })
-    });
-
-    alert("Profile updated");
-  };
-
   return (
     <div style={pageStyle}>
-        <button onClick={() => window.location.href = "/home"}>
-  Back
-</button>
+
+      <button onClick={() => window.location.href = "/home"}>
+        Back
+      </button>
+
       <h2>Profile</h2>
+
+      <img
+        src={user.avatar_url || "https://via.placeholder.com/100"}
+        alt="avatar"
+        style={{
+          width: "100px",
+          height: "100px",
+          borderRadius: "50%",
+          objectFit: "cover"
+        }}
+      />
 
       <p>Email: {user.email}</p>
 
-      <input
-        value={name}
-        onChange={e => setName(e.target.value)}
-        placeholder="Name"
-      />
+      <p>Name: {user.name}</p>
 
-      <input
-        value={university}
-        onChange={e => setUniversity(e.target.value)}
-        placeholder="University"
-      />
+      <p>University: {user.university}</p>
 
-      <button onClick={handleUpdate}>Update Profile</button>
+      <button onClick={() => window.location.href = "/edit-profile"}>
+        Edit Profile
+      </button>
+
       <button onClick={() => window.location.href = "/change-password"}>
         Change Password
       </button>
 
       <br /><br />
 
-      <button onClick={handleLogout}>Logout</button>
+      <button onClick={handleLogout}>
+        Logout
+      </button>
+
       <p style={{
         marginTop: "40px",
         fontSize: "12px",
@@ -73,6 +62,7 @@ function Profile() {
       }}>
         ID: {user.id}
       </p>
+
     </div>
   );
 }
