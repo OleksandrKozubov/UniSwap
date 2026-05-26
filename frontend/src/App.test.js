@@ -1,9 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-// Placeholder smoke test from Create React App; it should be updated with app-specific checks.
-test('renders learn react link', () => {
+test('renders the login screen', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
 });

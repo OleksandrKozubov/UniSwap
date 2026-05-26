@@ -5,7 +5,7 @@ function Map({ lat, lng }) {
     <MapContainer
       center={[lat, lng]}
       zoom={15}
-      style={{ height: "250px", width: "100%", borderRadius: "10px" }}
+      className="listing-map"
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

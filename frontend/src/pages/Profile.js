@@ -1,69 +1,130 @@
-const pageStyle = {
-  minHeight: "100vh",
-  backgroundColor: "#1a1a1a",
-  color: "#f5f5f5",
-  padding: "20px"
-};
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getAvatarPlaceholder, getAvatarUrl } from "../utils/avatar";
 
 function Profile() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(() =>
+    JSON.parse(localStorage.getItem("user") || "null")
+  );
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  useEffect(() => {
+    if (!user?.id) {
+      navigate("/");
+      return;
+    }
+
+    const controller = new AbortController();
+
+    fetch(`http://localhost:5001/users/${user.id}`, {
+      signal: controller.signal
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error("Profile request failed");
+        }
+
+        return res.json();
+      })
+      .then(data => {
+        setUser(prevUser => {
+          const refreshedUser = { ...(prevUser || {}), ...data };
+          localStorage.setItem("user", JSON.stringify(refreshedUser));
+          return refreshedUser;
+        });
+      })
+      .catch(error => {
+        if (error.name !== "AbortError") {
+          console.error(error);
+        }
+      });
+
+    return () => controller.abort();
+  }, [navigate, user?.id]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/";
+    navigate("/");
   };
 
+  if (!user?.id) {
+    return <div className="loading-state">Loading profile...</div>;
+  }
+
+  const avatarUrl = getAvatarUrl(user, user.name);
+
   return (
-    <div style={pageStyle}>
+    <main className="app-shell">
+      <div className="app-container app-container--narrow">
+        <header className="page-header">
+          <div>
+            <p className="eyebrow">Account</p>
+            <h1 className="page-title">Profile</h1>
+          </div>
+          <button className="btn btn-secondary" type="button" onClick={() => navigate("/home")}>
+            Back
+          </button>
+        </header>
 
-      <button onClick={() => window.location.href = "/home"}>
-        Back
-      </button>
+        <section className="content-panel">
+          <div className="profile-header">
+            <img
+              className="avatar avatar-lg"
+              src={avatarUrl}
+              alt={user.name || "User"}
+              onError={event => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = getAvatarPlaceholder(user.name);
+              }}
+            />
+            <div>
+              <h2 className="profile-name">{user.name}</h2>
+              <p className="page-subtitle">{user.university}</p>
+            </div>
+          </div>
 
-      <h2>Profile</h2>
+          <div className="profile-details">
+            <div className="profile-detail">
+              <span className="meta-label">Email</span>
+              <strong>{user.email}</strong>
+            </div>
+            <div className="profile-detail">
+              <span className="meta-label">Name</span>
+              <strong>{user.name}</strong>
+            </div>
+            <div className="profile-detail">
+              <span className="meta-label">University</span>
+              <strong>{user.university}</strong>
+            </div>
+            <div className="profile-detail">
+              <span className="meta-label">ID</span>
+              <strong>{user.id}</strong>
+            </div>
+          </div>
 
-      <img
-        src={user.avatar_url || "https://via.placeholder.com/100"}
-        alt="avatar"
-        style={{
-          width: "100px",
-          height: "100px",
-          borderRadius: "50%",
-          objectFit: "cover"
-        }}
-      />
-
-      <p>Email: {user.email}</p>
-
-      <p>Name: {user.name}</p>
-
-      <p>University: {user.university}</p>
-
-      <button onClick={() => window.location.href = "/edit-profile"}>
-        Edit Profile
-      </button>
-
-      <button onClick={() => window.location.href = "/change-password"}>
-        Change Password
-      </button>
-
-      <br /><br />
-
-      <button onClick={handleLogout}>
-        Logout
-      </button>
-
-      <p style={{
-        marginTop: "40px",
-        fontSize: "12px",
-        opacity: 0.5
-      }}>
-        ID: {user.id}
-      </p>
-
-    </div>
+          <div className="page-actions">
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => navigate("/edit-profile")}
+            >
+              Edit profile
+            </button>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={() => navigate("/change-password")}
+            >
+              Change password
+            </button>
+            <button className="btn btn-danger" type="button" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
 

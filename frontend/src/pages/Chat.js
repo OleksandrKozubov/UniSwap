@@ -1,33 +1,61 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
+import { getAvatarPlaceholder } from "../utils/avatar";
 
 const socket = io("http://localhost:5001");
 
+function formatMessageTime(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function Chat() {
   const { listingId, receiverId } = useParams();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
-  const senderId = Number(user.id);
+  const senderId = Number(user?.id);
   const receiver = Number(receiverId);
 
   const [messages, setMessages] = useState([]);
   const [listingTitle, setListingTitle] = useState("");
   const [otherUser, setOtherUser] = useState(null);
   const [text, setText] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const messagesEndRef = useRef(null);
 
-  // prevent self chat
   useEffect(() => {
+    if (!senderId) {
+      navigate("/");
+    }
+  }, [navigate, senderId]);
+
+  useEffect(() => {
+    if (!senderId) {
+      return;
+    }
+
     if (senderId === receiver) {
       alert("You cannot chat with yourself");
-      window.location.href = "/home";
+      navigate("/home");
     }
-  }, [receiver, senderId]);
+  }, [navigate, receiver, senderId]);
 
-  // load messages
   useEffect(() => {
+    if (!senderId) {
+      return;
+    }
+
     const markMessagesRead = () => {
       fetch("http://localhost:5001/messages/read", {
         method: "PUT",
@@ -37,13 +65,18 @@ function Chat() {
           listingId,
           otherUserId: receiver
         })
-      });
+      }).catch(error => console.error(error));
     };
 
     fetch(`http://localhost:5001/messages/${listingId}`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error("Messages request failed");
+        }
+
+        return res.json();
+      })
       .then(data => {
-        // filter messages only between these two users
         const filtered = data.filter(
           msg =>
             (msg.sender_id === senderId && msg.receiver_id === receiver) ||
@@ -51,23 +84,32 @@ function Chat() {
         );
         setMessages(filtered);
         markMessagesRead();
+      })
+      .catch(error => {
+        console.error(error);
+        setLoadError("Messages could not be loaded.");
       });
   }, [listingId, senderId, receiver]);
 
   useEffect(() => {
     fetch(`http://localhost:5001/listings/${listingId}`)
       .then(res => res.json())
-      .then(data => setListingTitle(data.title || ""));
+      .then(data => setListingTitle(data.title || ""))
+      .catch(error => console.error(error));
   }, [listingId]);
 
   useEffect(() => {
     fetch(`http://localhost:5001/users/${receiver}`)
       .then(res => res.json())
-      .then(data => setOtherUser(data));
+      .then(data => setOtherUser(data))
+      .catch(error => console.error(error));
   }, [receiver]);
 
-  // socket connection
   useEffect(() => {
+    if (!senderId) {
+      return;
+    }
+
     const markMessagesRead = () => {
       fetch("http://localhost:5001/messages/read", {
         method: "PUT",
@@ -77,13 +119,10 @@ function Chat() {
           listingId,
           otherUserId: receiver
         })
-      });
+      }).catch(error => console.error(error));
     };
 
-    socket.emit("join_chat", { listingId });
-
-    socket.on("receive_message", (msg) => {
-      // only add relevant messages
+    const receiveMessage = msg => {
       if (
         (msg.sender_id === senderId && msg.receiver_id === receiver) ||
         (msg.sender_id === receiver && msg.receiver_id === senderId)
@@ -94,133 +133,136 @@ function Chat() {
           markMessagesRead();
         }
       }
-    });
+    };
 
-    return () => socket.off("receive_message");
+    socket.emit("join_chat", { listingId });
+    socket.on("receive_message", receiveMessage);
+
+    return () => socket.off("receive_message", receiveMessage);
   }, [listingId, senderId, receiver]);
 
-  // auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = () => {
-    if (!text.trim()) return;
+  const sendMessage = event => {
+    event.preventDefault();
+
+    const trimmedText = text.trim();
+
+    if (!trimmedText || !senderId) {
+      return;
+    }
 
     socket.emit("send_message", {
-      senderId: senderId,
+      senderId,
       receiverId: receiver,
       listingId: Number(listingId),
-      text
+      text: trimmedText
     });
 
     setText("");
   };
 
+  if (!senderId) {
+    return <div className="loading-state">Loading chat...</div>;
+  }
+
+  const otherUserName = otherUser?.name || "User";
+  const otherUserAvatar =
+    otherUser?.avatar_url || getAvatarPlaceholder(otherUserName);
+
   return (
-    <div style={{ padding: "20px" }}>
+    <main className="chat-shell">
+      <header className="chat-header">
+        <button className="btn btn-secondary" type="button" onClick={() => navigate("/chats")}>
+          Back
+        </button>
 
-      {/* BACK */}
-      <button onClick={() => window.location.href = "/chats"}>
-        Back
-      </button>
-      {/* LISTING BANNER (basic for now) */}
-      <div style={{
-        background: "#8e8e8e",
-        padding: "10px",
-        marginBottom: "10px"
-      }}>
-        Chat about {listingTitle || `listing #${listingId}`}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          marginBottom: "12px",
-          cursor: otherUser ? "pointer" : "default"
-        }}
-        onClick={() => {
-          if (otherUser?.id) {
-            window.location.href = `/user/${otherUser.id}`;
-          }
-        }}
-      >
-        <img
-          src={otherUser?.avatar_url || "https://via.placeholder.com/44"}
-          alt={otherUser?.name || "User"}
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "50%",
-            objectFit: "cover"
-          }}
-        />
-        <div>
-          <div style={{ fontSize: "12px", opacity: 0.7, color: "white" }}>
-            Chatting with
+        <section className="chat-banner">
+          <div>
+            <p className="eyebrow">Conversation</p>
+            <h1 className="section-title">
+              Chat about {listingTitle || `listing #${listingId}`}
+            </h1>
           </div>
-          <div style={{ color: "#9fd0ff" }}>
-            {otherUser?.name || "User"}
-          </div>
-        </div>
-      </div>
 
-      {/* MESSAGES */}
-      <div style={{
-        height: "350px",
-        overflowY: "scroll",
-        padding: "10px",
-        background: "#1a1a1a"
-      }}>
-        {messages.map(msg => (
-          <div
-            key={msg.id}
-            style={{
-              display: "flex",
-              justifyContent:
-                msg.sender_id === senderId ? "flex-end" : "flex-start"
+          <button
+            type="button"
+            className="seller-row seller-button"
+            onClick={() => {
+              if (otherUser?.id) {
+                navigate(`/user/${otherUser.id}`);
+              }
             }}
           >
-            <div style={{
-              background:
-                msg.sender_id === senderId ? "#4CAF50" : "#333",
-              padding: "10px",
-              borderRadius: "10px",
-              margin: "5px",
-              maxWidth: "60%",
-              color: "white"
-            }}>
-              {msg.text}
+            <img
+              className="avatar"
+              src={otherUserAvatar}
+              alt={otherUserName}
+              onError={event => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = getAvatarPlaceholder(otherUserName);
+              }}
+            />
+            <span>
+              <span className="muted">Chatting with</span>{" "}
+              <span className="seller-name">{otherUserName}</span>
+            </span>
+          </button>
+        </section>
+      </header>
 
-              <div style={{
-                fontSize: "10px",
-                opacity: 0.6,
-                marginTop: "5px"
-              }}>
-                {new Date(msg.created_at).toLocaleTimeString()}
+      <section className="chat-window" aria-live="polite">
+        {loadError && (
+          <div className="empty-state">
+            <h3>{loadError}</h3>
+            <p>Check that the backend is running on port 5001.</p>
+          </div>
+        )}
+
+        {!loadError && messages.length === 0 && (
+          <div className="empty-state">
+            <h3>No messages yet</h3>
+            <p>Send the first message about this listing.</p>
+          </div>
+        )}
+
+        {!loadError && messages.map((msg, index) => {
+          const isSent = msg.sender_id === senderId;
+          const time = formatMessageTime(msg.created_at);
+
+          return (
+            <div
+              className={`message-row ${
+                isSent ? "message-row--sent" : "message-row--received"
+              }`}
+              key={msg.id || `${msg.sender_id}-${msg.created_at}-${index}`}
+            >
+              <div className="message-bubble">
+                {msg.text}
+                {time && <div className="message-time">{time}</div>}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div ref={messagesEndRef} />
-      </div>
+      </section>
 
-      {/* INPUT */}
-      <div style={{ marginTop: "10px" }}>
+      <form className="chat-composer" onSubmit={sendMessage}>
         <input
+          className="input"
           value={text}
+          placeholder="Write a message"
           onChange={e => setText(e.target.value)}
-          style={{ width: "70%", padding: "8px" }}
         />
 
-        <button onClick={sendMessage}>
+        <button className="btn btn-primary" type="submit">
           Send
         </button>
-      </div>
-
-    </div>
+      </form>
+    </main>
   );
 }
 

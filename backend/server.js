@@ -652,7 +652,7 @@ if (!email || !password) {
     );
 
     if (user.rows.length === 0) {
-      return res.status(401).send("User not found");
+      return res.status(401).json({ error: "User not found" });
     }
 
     const validPassword = await bcrypt.compare(
@@ -661,7 +661,7 @@ if (!email || !password) {
     );
 
     if (!validPassword) {
-      return res.status(401).send("Invalid password");
+      return res.status(401).json({ error: "Invalid password" });
     }
 
     const token = jwt.sign(
@@ -675,7 +675,9 @@ if (!email || !password) {
   user: {
     id: user.rows[0].id,
     name: user.rows[0].name,
-    email: user.rows[0].email
+    email: user.rows[0].email,
+    university: user.rows[0].university,
+    avatar_url: user.rows[0].avatar_url
   }
 });
 

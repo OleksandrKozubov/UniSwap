@@ -5,74 +5,98 @@ import { useNavigate } from "react-router-dom";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const pageStyle = {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1a1a1a",
-    color: "#f5f5f5",
-    gap: "12px"
-  };
+  const handleLogin = async event => {
+    event.preventDefault();
 
-  const inputStyle = {
-    width: "260px",
-    padding: "10px"
-  };
-
-  const handleLogin = async () => {
-    // Stop early so the API is only called when both fields are filled in.
     if (!email || !password) {
-  alert("Please enter email and password");
-  return;
-}
-    const res = await fetch("http://localhost:5001/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ email, password })
-    });
+      alert("Please enter email and password");
+      return;
+    }
 
-    const data = await res.json();
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    setIsSubmitting(true);
 
-    // store token
-    localStorage.setItem("token", data.token);
+    try {
+      const res = await fetch("http://localhost:5001/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+      });
 
-    localStorage.setItem("token", data.token);
+      const data = await res.json();
 
-    navigate("/home")
+      if (!res.ok) {
+        alert(data.error || "Login failed");
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      navigate("/home");
+    } catch (error) {
+      console.error(error);
+      alert("Could not connect to the server");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div style={pageStyle}>
-      <h1>Uniswap</h1>
+    <main className="app-shell app-shell--center">
+      <section className="auth-card" aria-labelledby="login-title">
+        <div className="brand-lockup">
+          <span className="brand-mark">US</span>
+          <div>
+            <p className="eyebrow">UniSwap Marketplace</p>
+            <h1 className="auth-title" id="login-title">Welcome back</h1>
+            <p className="auth-copy">
+              Sign in to browse, list, and message other students.
+            </p>
+          </div>
+        </div>
 
-      <h3>Login</h3>
+        <form className="form-stack" onSubmit={handleLogin}>
+          <div className="field">
+            <label htmlFor="login-email">Email</label>
+            <input
+              id="login-email"
+              className="input"
+              type="email"
+              placeholder="you@university.edu"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
+          </div>
 
-      <input
-        style={inputStyle}
-        placeholder="Email"
-        onChange={e => setEmail(e.target.value)}
-      />
+          <div className="field">
+            <label htmlFor="login-password">Password</label>
+            <input
+              id="login-password"
+              className="input"
+              type="password"
+              placeholder="Your password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+            />
+          </div>
 
-      <input
-        style={inputStyle}
-        type="password"
-        placeholder="Password"
-        onChange={e => setPassword(e.target.value)}
-      />
-
-      <button onClick={handleLogin}>Login</button>
-      <button onClick={() => window.location.href = "/register"}>
-  Register
-</button>
-    </div>
+          <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Login"}
+          </button>
+          <button
+            className="btn btn-secondary"
+            type="button"
+            onClick={() => navigate("/register")}
+          >
+            Create account
+          </button>
+        </form>
+      </section>
+    </main>
   );
 }
 

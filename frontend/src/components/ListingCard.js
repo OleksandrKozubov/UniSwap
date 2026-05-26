@@ -1,13 +1,15 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   getListingImageUrls,
   listingPlaceholderImage
 } from "../utils/listingImages";
+import { getAvatarPlaceholder } from "../utils/avatar";
 import { formatPrice } from "../utils/formatPrice";
 import { formatListingDate } from "../utils/formatListingDate";
 
 // ListingCard shows a quick preview and links to the full listing page.
 function ListingCard({ listing, isOwner }) {
+  const navigate = useNavigate();
   const imageUrls = getListingImageUrls(listing);
   const firstImage = imageUrls[0] || listingPlaceholderImage;
   const photoCount = imageUrls.length;
@@ -15,115 +17,82 @@ function ListingCard({ listing, isOwner }) {
   const category = listing.category_name || "Uncategorized";
   const sellerName = listing.seller_name || "User";
   const sellerAvatar =
-    listing.seller_avatar_url || "https://via.placeholder.com/40";
+    listing.seller_avatar_url || getAvatarPlaceholder(sellerName);
+  const openListing = () => navigate(`/listing/${listing.id}`);
+  const handleKeyDown = event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openListing();
+    }
+  };
 
   return (
-    <div style={{
-      border: "1px solid #ccc",
-      padding: "10px",
-      margin: "10px",
-      width: "200px",
-      position: "relative"
-    }}>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "8px" }}>
-        <span style={{
-          display: "inline-block",
-          padding: "4px 8px",
-          borderRadius: "999px",
-          backgroundColor: "#4a6cb4",
-          color: "#fff",
-          fontSize: "12px",
-          fontWeight: "bold"
-        }}>
-          {category}
-        </span>
-        {isOwner && (
-        <span style={{
-          display: "inline-block",
-          padding: "4px 8px",
-          borderRadius: "999px",
-          backgroundColor: "#4CAF50",
-          color: "#fff",
-          fontSize: "12px",
-          fontWeight: "bold"
-        }}>
-          Your listing
-        </span>
-      )}
-      </div>
-      <div style={{ position: "relative" }}>
+    <article
+      className="listing-card"
+      role="link"
+      tabIndex="0"
+      aria-label={`Open ${listing.title}`}
+      onClick={openListing}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="listing-card-media">
         <img
           src={firstImage}
           alt={listing.title}
-          style={{ width: "100%", height: "150px", objectFit: "cover" }}
           onError={event => {
             event.currentTarget.onerror = null;
             event.currentTarget.src = listingPlaceholderImage;
           }}
         />
         {photoCount > 0 && (
-          <span style={{
-            position: "absolute",
-            right: "8px",
-            bottom: "8px",
-            padding: "3px 7px",
-            borderRadius: "999px",
-            backgroundColor: "rgba(0, 0, 0, 0.75)",
-            color: "#fff",
-            fontSize: "11px",
-            fontWeight: "bold"
-          }}>
+          <span className="badge badge-dark photo-count">
             {photoCount} {photoCount === 1 ? "photo" : "photos"}
           </span>
         )}
       </div>
-      <h3>{listing.title}</h3>
-      <p>{formatPrice(listing.price)}</p>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          cursor: "pointer",
-          marginBottom: "8px"
-        }}
-        onClick={() => window.location.href = `/user/${listing.user_id}`}
-      >
-        <img
-          src={sellerAvatar}
-          alt={sellerName}
-          style={{
-            width: "28px",
-            height: "28px",
-            borderRadius: "50%",
-            objectFit: "cover"
+
+      <div className="listing-card-body">
+        <div className="badge-row">
+          <span className="badge badge-primary">{category}</span>
+          {isOwner && (
+            <span className="badge badge-success">Your listing</span>
+          )}
+        </div>
+
+        <div>
+          <h3 className="listing-title">{listing.title}</h3>
+          <p className="listing-price">{formatPrice(listing.price)}</p>
+        </div>
+
+        <button
+          type="button"
+          className="seller-row seller-button"
+          onClick={event => {
+            event.stopPropagation();
+            navigate(`/user/${listing.user_id}`);
           }}
-        />
-        <span style={{ color: "lightblue", fontSize: "14px" }}>
-          Seller: {sellerName}
-        </span>
-      </div>
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "8px"
-      }}>
-        <Link to={`/listing/${listing.id}`}>
-          View Details
-        </Link>
-        {listedAt && (
-          <span style={{
-            fontSize: "11px",
-            color: "#777",
-            marginLeft: "auto",
-            textAlign: "right"
-          }}>
-            {listedAt}
+        >
+          <img
+            className="avatar"
+            src={sellerAvatar}
+            alt={sellerName}
+            onError={event => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = getAvatarPlaceholder(sellerName);
+            }}
+          />
+          <span>
+            <span className="muted">Seller</span>{" "}
+            <span className="seller-name">{sellerName}</span>
           </span>
-        )}
+        </button>
+
+        <div className="listing-card-footer">
+          <span className="link">Open listing</span>
+          {listedAt && <span>{listedAt}</span>}
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
 
