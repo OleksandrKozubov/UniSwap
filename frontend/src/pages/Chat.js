@@ -36,7 +36,7 @@ function Chat() {
 
   useEffect(() => {
     if (!senderId) {
-      navigate("/");
+      navigate("/login");
     }
   }, [navigate, senderId]);
 
@@ -175,10 +175,6 @@ function Chat() {
   return (
     <main className="chat-shell">
       <header className="chat-header">
-        <button className="btn btn-secondary" type="button" onClick={() => navigate("/chats")}>
-          Back
-        </button>
-
         <section className="chat-banner">
           <div>
             <p className="eyebrow">Conversation</p>
@@ -187,29 +183,35 @@ function Chat() {
             </h1>
           </div>
 
-          <button
-            type="button"
-            className="seller-row seller-button"
-            onClick={() => {
-              if (otherUser?.id) {
-                navigate(`/user/${otherUser.id}`);
-              }
-            }}
-          >
-            <img
-              className="avatar"
-              src={otherUserAvatar}
-              alt={otherUserName}
-              onError={event => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = getAvatarPlaceholder(otherUserName);
+          <div className="chat-banner-actions">
+            <button
+              type="button"
+              className="seller-row seller-button"
+              onClick={() => {
+                if (otherUser?.id) {
+                  navigate(`/user/${otherUser.id}`);
+                }
               }}
-            />
-            <span>
-              <span className="muted">Chatting with</span>{" "}
-              <span className="seller-name">{otherUserName}</span>
-            </span>
-          </button>
+            >
+              <img
+                className="avatar"
+                src={otherUserAvatar}
+                alt={otherUserName}
+                onError={event => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = getAvatarPlaceholder(otherUserName);
+                }}
+              />
+              <span>
+                <span className="muted">With</span>{" "}
+                <span className="seller-name">{otherUserName}</span>
+              </span>
+            </button>
+
+            <button className="btn btn-secondary" type="button" onClick={() => navigate("/chats")}>
+              Back
+            </button>
+          </div>
         </section>
       </header>
 
@@ -217,14 +219,12 @@ function Chat() {
         {loadError && (
           <div className="empty-state">
             <h3>{loadError}</h3>
-            <p>Check that the backend is running on port 5001.</p>
           </div>
         )}
 
         {!loadError && messages.length === 0 && (
           <div className="empty-state">
             <h3>No messages yet</h3>
-            <p>Send the first message about this listing.</p>
           </div>
         )}
 

@@ -12,7 +12,7 @@ function Chats() {
 
   useEffect(() => {
     if (!userId) {
-      navigate("/");
+      navigate("/login");
       return;
     }
 

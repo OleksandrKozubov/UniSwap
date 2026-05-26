@@ -45,7 +45,7 @@ const locations = [
     lng: 23.829563
   },
 
-   {
+  {
     name: "VMU Dormitory No. 10 (Akademija)",
     city: "Kaunas (Akademija)",
     university: "VMU",
@@ -54,4 +54,8 @@ const locations = [
   }
 ];
 
-export default locations;
+const alphabetizedLocations = [...locations].sort((a, b) =>
+  a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+);
+
+export default alphabetizedLocations;

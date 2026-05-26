@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BrandLogo from "../components/BrandLogo";
 import ListingCard from "../components/ListingCard";
 import locations from "../data/locations";
 
@@ -14,6 +15,7 @@ function Home() {
   const [location, setLocation] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [freeOnly, setFreeOnly] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [unread, setUnread] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +27,15 @@ function Home() {
 
     fetch("http://localhost:5001/categories")
       .then(res => res.json())
-      .then(data => setCategories(Array.isArray(data) ? data : []))
+      .then(data =>
+        setCategories(
+          Array.isArray(data)
+            ? [...data].sort((a, b) =>
+                a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+              )
+            : []
+        )
+      )
       .catch(error => {
         console.error(error);
         setCategories([]);
@@ -66,6 +76,8 @@ function Home() {
     if (location) params.append("location", location);
     if (minPrice) params.append("minPrice", minPrice);
     if (maxPrice) params.append("maxPrice", maxPrice);
+    if (freeOnly) params.append("freeOnly", "true");
+    if (user?.id) params.append("userId", user.id);
     params.append("sort", sortBy);
 
     setIsLoading(true);
@@ -86,7 +98,16 @@ function Home() {
         setListings([]);
       })
       .finally(() => setIsLoading(false));
-  }, [search, category, location, minPrice, maxPrice, sortBy]);
+  }, [
+    search,
+    category,
+    location,
+    minPrice,
+    maxPrice,
+    freeOnly,
+    sortBy,
+    user?.id
+  ]);
 
   const resetFilters = () => {
     setSearch("");
@@ -94,21 +115,44 @@ function Home() {
     setLocation("");
     setMinPrice("");
     setMaxPrice("");
+    setFreeOnly(false);
     setSortBy("newest");
+  };
+
+  const handleListingSavedChange = ({ listingId, isSaved, savedCount }) => {
+    setListings(prevListings =>
+      prevListings.map(listing =>
+        listing.id === listingId
+          ? {
+              ...listing,
+              is_saved: isSaved,
+              saved_count: savedCount
+            }
+          : listing
+      )
+    );
   };
 
   return (
     <main className="app-shell">
       <div className="app-container">
         <header className="topbar">
-          <div>
-            <p className="eyebrow">UniSwap Marketplace</p>
-            <p className="page-subtitle">
-              Browse student listings, compare prices, and keep chats in one place.
-            </p>
+          <div className="home-brand">
+            <BrandLogo size="large" />
+            <div>
+              <h1 className="home-title">UniSwap</h1>
+              <p className="eyebrow">Marketplace</p>
+            </div>
           </div>
 
           <nav className="topbar-nav" aria-label="Main">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => navigate("/saved")}
+            >
+              Saved
+            </button>
             <button
               type="button"
               className="btn btn-ghost nav-pill"
@@ -185,6 +229,7 @@ function Home() {
                 min="0"
                 placeholder="0"
                 value={minPrice}
+                disabled={freeOnly}
                 onChange={e => setMinPrice(e.target.value)}
               />
             </div>
@@ -198,6 +243,7 @@ function Home() {
                 min="0"
                 placeholder="Any"
                 value={maxPrice}
+                disabled={freeOnly}
                 onChange={e => setMaxPrice(e.target.value)}
               />
             </div>
@@ -219,27 +265,43 @@ function Home() {
             <button className="btn btn-secondary" type="button" onClick={resetFilters}>
               Reset
             </button>
+            <button
+              className={`btn btn-secondary btn-toggle ${
+                freeOnly ? "btn-toggle--active" : ""
+              }`}
+              type="button"
+              aria-pressed={freeOnly}
+              onClick={() => {
+                const nextFreeOnly = !freeOnly;
+
+                setFreeOnly(nextFreeOnly);
+
+                if (nextFreeOnly) {
+                  setMinPrice("");
+                  setMaxPrice("");
+                }
+              }}
+            >
+              Free
+            </button>
           </div>
         </section>
 
         {isLoading && (
           <section className="empty-state" aria-live="polite">
             <h3>Loading listings...</h3>
-            <p>Finding what students have posted recently.</p>
           </section>
         )}
 
         {!isLoading && loadError && (
           <section className="empty-state" aria-live="polite">
             <h3>{loadError}</h3>
-            <p>Check that the backend is running on port 5001.</p>
           </section>
         )}
 
         {!isLoading && !loadError && listings.length === 0 && (
           <section className="empty-state">
             <h3>No listings found</h3>
-            <p>Try a wider search or clear the filters.</p>
           </section>
         )}
 
@@ -250,6 +312,8 @@ function Home() {
                 key={listing.id}
                 listing={listing}
                 isOwner={user?.id === listing.user_id}
+                currentUserId={user?.id}
+                onSavedChange={handleListingSavedChange}
               />
             ))}
           </section>

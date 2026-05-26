@@ -6,6 +6,7 @@ import { getAvatarPlaceholder } from "../utils/avatar";
 function UserProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem("user") || "null");
 
   const [user, setUser] = useState(null);
   const [listings, setListings] = useState([]);
@@ -14,11 +15,17 @@ function UserProfile() {
   useEffect(() => {
     const controller = new AbortController();
 
+    const listingParams = new URLSearchParams();
+
+    if (currentUser?.id) {
+      listingParams.append("userId", currentUser.id);
+    }
+
     Promise.all([
       fetch(`http://localhost:5001/users/${id}`, {
         signal: controller.signal
       }).then(res => res.json()),
-      fetch(`http://localhost:5001/users/${id}/listings`, {
+      fetch(`http://localhost:5001/users/${id}/listings?${listingParams.toString()}`, {
         signal: controller.signal
       }).then(res => res.json())
     ])
@@ -39,18 +46,37 @@ function UserProfile() {
       });
 
     return () => controller.abort();
-  }, [id]);
+  }, [currentUser?.id, id]);
+
+  const handleListingSavedChange = ({ listingId, isSaved, savedCount }) => {
+    setListings(prevListings =>
+      prevListings.map(listing =>
+        listing.id === listingId
+          ? {
+              ...listing,
+              is_saved: isSaved,
+              saved_count: savedCount
+            }
+          : listing
+      )
+    );
+  };
 
   if (error) {
     return (
       <main className="app-shell">
         <div className="app-container">
-          <button className="btn btn-secondary" type="button" onClick={() => navigate("/home")}>
-            Back
-          </button>
+          <header className="page-header">
+            <div>
+              <p className="eyebrow">Seller profile</p>
+              <h1 className="page-title">Profile unavailable</h1>
+            </div>
+            <button className="btn btn-secondary" type="button" onClick={() => navigate("/home")}>
+              Back
+            </button>
+          </header>
           <section className="empty-state">
             <h3>{error}</h3>
-            <p>The profile could not be opened.</p>
           </section>
         </div>
       </main>
@@ -95,12 +121,17 @@ function UserProfile() {
           {listings.length === 0 ? (
             <div className="empty-state">
               <h3>No listings yet</h3>
-              <p>This seller has not posted anything visible right now.</p>
             </div>
           ) : (
             <div className="listing-grid">
               {listings.map(listing => (
-                <ListingCard key={listing.id} listing={listing} />
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  isOwner={currentUser?.id === listing.user_id}
+                  currentUserId={currentUser?.id}
+                  onSavedChange={handleListingSavedChange}
+                />
               ))}
             </div>
           )}

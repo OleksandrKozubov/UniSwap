@@ -1,12 +1,32 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import BrandLogo from "../components/BrandLogo";
 
 // Login collects credentials, sends them to the backend, and redirects on success.
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
+  const redirectTo = location.state?.from
+    ? `${location.state.from.pathname}${location.state.from.search}`
+    : "/home";
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    let user = null;
+
+    try {
+      user = JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      localStorage.removeItem("user");
+    }
+
+    if (token && user?.id) {
+      navigate("/home", { replace: true });
+    }
+  }, [navigate]);
 
   const handleLogin = async event => {
     event.preventDefault();
@@ -36,7 +56,7 @@ function Login() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/home");
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error(error);
       alert("Could not connect to the server");
@@ -49,13 +69,10 @@ function Login() {
     <main className="app-shell app-shell--center">
       <section className="auth-card" aria-labelledby="login-title">
         <div className="brand-lockup">
-          <span className="brand-mark">US</span>
+          <BrandLogo />
           <div>
-            <p className="eyebrow">UniSwap Marketplace</p>
+            <p className="eyebrow">UniSwap</p>
             <h1 className="auth-title" id="login-title">Welcome back</h1>
-            <p className="auth-copy">
-              Sign in to browse, list, and message other students.
-            </p>
           </div>
         </div>
 

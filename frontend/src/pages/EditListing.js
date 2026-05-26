@@ -24,7 +24,15 @@ function EditListing() {
   useEffect(() => {
     fetch("http://localhost:5001/categories")
       .then(res => res.json())
-      .then(data => setCategories(Array.isArray(data) ? data : []))
+      .then(data =>
+        setCategories(
+          Array.isArray(data)
+            ? [...data].sort((a, b) =>
+                a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+              )
+            : []
+        )
+      )
       .catch(error => {
         console.error(error);
         setCategories([]);
@@ -34,7 +42,7 @@ function EditListing() {
   // Load the current listing values before showing the edit form.
   useEffect(() => {
     if (!userId) {
-      navigate("/");
+      navigate("/login");
       return;
     }
 
@@ -50,7 +58,11 @@ function EditListing() {
         }
 
         setTitle(data.title || "");
-        setPrice(data.price || "");
+        setPrice(
+          data.price === null || data.price === undefined
+            ? ""
+            : String(data.price)
+        );
         setDescription(data.description || "");
         setSelectedLocation(data.location || "");
         setSelectedCategoryId(String(data.category_id || ""));
@@ -94,7 +106,7 @@ function EditListing() {
   const handleUpdate = async event => {
     event.preventDefault();
 
-    if (!title || !price) {
+    if (!title || price === "") {
       alert("Title and price required");
       return;
     }
@@ -270,16 +282,25 @@ function EditListing() {
 
           <div className="field">
             <label htmlFor="edit-price">Price</label>
-            <input
-              id="edit-price"
-              className="input"
-              type="number"
-              min="0"
-              step="0.01"
-              value={price}
-              onChange={e => setPrice(e.target.value)}
-              placeholder="Price"
-            />
+            <div className="input-action-row">
+              <input
+                id="edit-price"
+                className="input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                placeholder="Price"
+              />
+              <button
+                className="btn btn-secondary"
+                type="button"
+                onClick={() => setPrice("0")}
+              >
+                Free
+              </button>
+            </div>
           </div>
 
           <div className="field form-row-full">

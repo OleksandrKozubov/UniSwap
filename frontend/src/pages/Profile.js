@@ -10,7 +10,7 @@ function Profile() {
 
   useEffect(() => {
     if (!user?.id) {
-      navigate("/");
+      navigate("/login");
       return;
     }
 
@@ -45,7 +45,7 @@ function Profile() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/");
+    navigate("/login");
   };
 
   if (!user?.id) {

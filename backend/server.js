@@ -182,6 +182,65 @@ async function getListingImages(listing) {
   return images;
 }
 
+function parseOptionalUserId(value) {
+  const userId = Number(value);
+
+  return Number.isInteger(userId) && userId > 0 ? userId : null;
+}
+
+function isMissingSavedListingsTable(error) {
+  return error?.code === "42P01";
+}
+
+async function getListingSaveData(listingId, userId) {
+  try {
+    const countResult = await pool.query(
+      "SELECT COUNT(*)::int AS saved_count FROM saved_listings WHERE listing_id = $1",
+      [listingId]
+    );
+
+    if (!userId) {
+      return {
+        saved_count: countResult.rows[0]?.saved_count || 0,
+        is_saved: false
+      };
+    }
+
+    const savedResult = await pool.query(
+      `SELECT EXISTS (
+         SELECT 1
+         FROM saved_listings
+         WHERE listing_id = $1 AND user_id = $2
+       ) AS is_saved`,
+      [listingId, userId]
+    );
+
+    return {
+      saved_count: countResult.rows[0]?.saved_count || 0,
+      is_saved: Boolean(savedResult.rows[0]?.is_saved)
+    };
+  } catch (err) {
+    if (isMissingSavedListingsTable(err)) {
+      return { saved_count: 0, is_saved: false };
+    }
+
+    throw err;
+  }
+}
+
+async function hydrateListing(listing, userId) {
+  const [images, saveData] = await Promise.all([
+    getListingImages(listing),
+    getListingSaveData(listing.id, userId)
+  ]);
+
+  return {
+    ...listing,
+    images,
+    ...saveData
+  };
+}
+
 app.get("/messages/:listingId", async (req, res) => {
   const result = await pool.query(
     `SELECT * FROM messages
@@ -203,9 +262,81 @@ app.get("/categories", async (req, res) => {
   }
 });
 
+app.post("/listings/:id/save", async (req, res) => {
+  const listingId = Number(req.params.id);
+  const userId = parseOptionalUserId(req.body.userId);
+
+  if (!Number.isInteger(listingId) || listingId <= 0 || !userId) {
+    return res.status(400).json({ error: "Valid user and listing are required" });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO saved_listings (user_id, listing_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, listing_id) DO NOTHING`,
+      [userId, listingId]
+    );
+
+    res.json(await getListingSaveData(listingId, userId));
+  } catch (err) {
+    console.error(err);
+
+    if (isMissingSavedListingsTable(err)) {
+      return res.status(500).json({
+        error: "Saved listings table is missing. Run backend/saved_listings.sql."
+      });
+    }
+
+    if (err.code === "23503") {
+      return res.status(404).json({ error: "Listing or user not found" });
+    }
+
+    res.status(500).json({ error: "Error saving listing" });
+  }
+});
+
+app.delete("/listings/:id/save", async (req, res) => {
+  const listingId = Number(req.params.id);
+  const userId = parseOptionalUserId(req.body.userId);
+
+  if (!Number.isInteger(listingId) || listingId <= 0 || !userId) {
+    return res.status(400).json({ error: "Valid user and listing are required" });
+  }
+
+  try {
+    await pool.query(
+      "DELETE FROM saved_listings WHERE user_id = $1 AND listing_id = $2",
+      [userId, listingId]
+    );
+
+    res.json(await getListingSaveData(listingId, userId));
+  } catch (err) {
+    console.error(err);
+
+    if (isMissingSavedListingsTable(err)) {
+      return res.status(500).json({
+        error: "Saved listings table is missing. Run backend/saved_listings.sql."
+      });
+    }
+
+    res.status(500).json({ error: "Error removing saved listing" });
+  }
+});
+
 // Return every listing so the home page can render the marketplace feed.
 app.get("/listings", async (req, res) => {
-  const { search, category, location, minPrice, maxPrice, sort } = req.query;
+  const {
+    search,
+    category,
+    location,
+    minPrice,
+    maxPrice,
+    sort,
+    userId,
+    freeOnly
+  } = req.query;
+  const viewerId = parseOptionalUserId(userId);
 
   let query = `
     SELECT
@@ -249,6 +380,10 @@ app.get("/listings", async (req, res) => {
     query += ` AND listings.price <= $${values.length}`;
   }
 
+  if (freeOnly === "true") {
+    query += " AND listings.price = 0";
+  }
+
   if (sort === "priceAsc") {
     query += " ORDER BY listings.price ASC, listings.created_at DESC";
   } else if (sort === "priceDesc") {
@@ -260,14 +395,9 @@ app.get("/listings", async (req, res) => {
   try {
     const listings = await pool.query(query, values);
 
-    const result = [];
-
-    for (let listing of listings.rows) {
-      result.push({
-        ...listing,
-        images: await getListingImages(listing)
-      });
-    }
+    const result = await Promise.all(
+      listings.rows.map(listing => hydrateListing(listing, viewerId))
+    );
 
     res.json(result);
 
@@ -346,6 +476,48 @@ app.post("/upload-avatar", upload.single("image"), async (req, res) => {
   }
 });
 
+app.get("/users/:id/saved-listings", async (req, res) => {
+  const userId = parseOptionalUserId(req.params.id);
+
+  if (!userId) {
+    return res.status(400).json({ error: "Valid user is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT
+         listings.*,
+         categories.name AS category_name,
+         users.name AS seller_name,
+         users.avatar_url AS seller_avatar_url,
+         saved_listings.created_at AS saved_at
+       FROM saved_listings
+       JOIN listings ON listings.id = saved_listings.listing_id
+       LEFT JOIN categories ON listings.category_id = categories.id
+       LEFT JOIN users ON users.id = listings.user_id
+       WHERE saved_listings.user_id = $1
+       ORDER BY saved_listings.created_at DESC`,
+      [userId]
+    );
+
+    const listings = await Promise.all(
+      result.rows.map(listing => hydrateListing(listing, userId))
+    );
+
+    res.json(listings);
+  } catch (err) {
+    console.error(err);
+
+    if (isMissingSavedListingsTable(err)) {
+      return res.status(500).json({
+        error: "Saved listings table is missing. Run backend/saved_listings.sql."
+      });
+    }
+
+    res.status(500).json({ error: "Error fetching saved listings" });
+  }
+});
+
 app.get("/users/:id", async (req, res) => {
   try {
     const result = await pool.query(
@@ -391,6 +563,8 @@ app.put("/users/:id", async (req, res) => {
 });
 
 app.get("/users/:id/listings", async (req, res) => {
+  const viewerId = parseOptionalUserId(req.query.userId);
+
   try {
     const result = await pool.query(
       `SELECT
@@ -407,10 +581,7 @@ app.get("/users/:id/listings", async (req, res) => {
     );
 
     const listingsWithImages = await Promise.all(
-      result.rows.map(async listing => ({
-        ...listing,
-        images: await getListingImages(listing)
-      }))
+      result.rows.map(listing => hydrateListing(listing, viewerId))
     );
 
     res.json(listingsWithImages);
@@ -436,6 +607,7 @@ app.delete("/listing-images/:id", async (req, res) => {
 
 // Return one listing by id for the details and edit pages.
 app.get("/listings/:id", async (req, res) => {
+  const viewerId = parseOptionalUserId(req.query.userId);
   const listing = await pool.query(
     `SELECT
        listings.*,
@@ -454,10 +626,7 @@ app.get("/listings/:id", async (req, res) => {
     return res.status(404).json({ error: "Listing not found" });
   }
 
-  res.json({
-    ...listingRow,
-    images: await getListingImages(listingRow)
-  });
+  res.json(await hydrateListing(listingRow, viewerId));
 });
 
 // Create a new listing owned by the user who submitted it.

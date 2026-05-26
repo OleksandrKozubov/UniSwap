@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BrandLogo from "../components/BrandLogo";
 
 // ChangePassword verifies the new password twice before sending the update request.
 function ChangePassword() {
@@ -12,7 +13,7 @@ function ChangePassword() {
 
   useEffect(() => {
     if (!user?.id) {
-      navigate("/");
+      navigate("/login");
     }
   }, [navigate, user?.id]);
 
@@ -69,15 +70,12 @@ function ChangePassword() {
     <main className="app-shell app-shell--center">
       <section className="auth-card" aria-labelledby="change-password-title">
         <div className="brand-lockup">
-          <span className="brand-mark">US</span>
+          <BrandLogo />
           <div>
             <p className="eyebrow">Security</p>
             <h1 className="auth-title" id="change-password-title">
               Change password
             </h1>
-            <p className="auth-copy">
-              Update your password while keeping your current session clean.
-            </p>
           </div>
         </div>
 

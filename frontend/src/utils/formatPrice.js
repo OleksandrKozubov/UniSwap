@@ -10,6 +10,10 @@ export function formatPrice(price) {
     return "Price on request";
   }
 
+  if (numericPrice === 0) {
+    return "Free";
+  }
+
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "EUR",

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BrandLogo from "../components/BrandLogo";
 
 // Register collects the required account fields before creating a new user.
 function Register() {
@@ -43,7 +44,7 @@ function Register() {
       }
 
       alert("User registered!");
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       console.error(error);
       alert("Could not connect to the server");
@@ -56,13 +57,10 @@ function Register() {
     <main className="app-shell app-shell--center">
       <section className="auth-card" aria-labelledby="register-title">
         <div className="brand-lockup">
-          <span className="brand-mark">US</span>
+          <BrandLogo />
           <div>
             <p className="eyebrow">Join UniSwap</p>
             <h1 className="auth-title" id="register-title">Create account</h1>
-            <p className="auth-copy">
-              Set up your student profile and start exchanging campus essentials.
-            </p>
           </div>
         </div>
 
@@ -119,7 +117,7 @@ function Register() {
           <button
             className="btn btn-secondary"
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/login")}
           >
             Already have an account? Login
           </button>

@@ -16,7 +16,7 @@ function EditProfile() {
 
   useEffect(() => {
     if (!user?.id) {
-      navigate("/");
+      navigate("/login");
       return;
     }
 
@@ -66,7 +66,7 @@ function EditProfile() {
     event.preventDefault();
 
     if (!user?.id) {
-      navigate("/");
+      navigate("/login");
       return;
     }
 

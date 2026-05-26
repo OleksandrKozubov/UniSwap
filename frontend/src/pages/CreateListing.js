@@ -18,13 +18,21 @@ function CreateListing() {
 
   useEffect(() => {
     if (!user?.id) {
-      navigate("/");
+      navigate("/login");
       return;
     }
 
     fetch("http://localhost:5001/categories")
       .then(res => res.json())
-      .then(data => setCategories(Array.isArray(data) ? data : []))
+      .then(data =>
+        setCategories(
+          Array.isArray(data)
+            ? [...data].sort((a, b) =>
+                a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+              )
+            : []
+        )
+      )
       .catch(error => {
         console.error(error);
         setCategories([]);
@@ -34,14 +42,14 @@ function CreateListing() {
   const handleSubmit = async event => {
     event.preventDefault();
 
-    if (!title || !price) {
+    if (!title || price === "") {
       alert("Title and price required");
       return;
     }
 
     if (!user?.id) {
       alert("Please log in again");
-      navigate("/");
+      navigate("/login");
       return;
     }
 
@@ -111,9 +119,6 @@ function CreateListing() {
           <div>
             <p className="eyebrow">New listing</p>
             <h1 className="page-title">Create listing</h1>
-            <p className="page-subtitle">
-              Add the details students need to decide quickly.
-            </p>
           </div>
           <button className="btn btn-secondary" type="button" onClick={() => navigate("/home")}>
             Back
@@ -134,16 +139,25 @@ function CreateListing() {
 
           <div className="field">
             <label htmlFor="listing-price">Price</label>
-            <input
-              id="listing-price"
-              className="input"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="25"
-              value={price}
-              onChange={e => setPrice(e.target.value)}
-            />
+            <div className="input-action-row">
+              <input
+                id="listing-price"
+                className="input"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="25"
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+              />
+              <button
+                className="btn btn-secondary"
+                type="button"
+                onClick={() => setPrice("0")}
+              >
+                Free
+              </button>
+            </div>
           </div>
 
           <div className="field">

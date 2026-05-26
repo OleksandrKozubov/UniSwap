@@ -20,7 +20,7 @@ function ListingDetails() {
   const handleDelete = async () => {
     if (!user?.id) {
       alert("Please log in again");
-      navigate("/");
+      navigate("/login");
       return;
     }
 
@@ -51,7 +51,7 @@ function ListingDetails() {
   const contactSeller = () => {
     if (!user?.id) {
       alert("Please log in to contact the seller");
-      navigate("/");
+      navigate("/login");
       return;
     }
 
@@ -78,12 +78,17 @@ function ListingDetails() {
     return (
       <main className="app-shell">
         <div className="app-container">
-          <button className="btn btn-secondary" type="button" onClick={() => navigate("/home")}>
-            Back
-          </button>
+          <header className="page-header">
+            <div>
+              <p className="eyebrow">Listing details</p>
+              <h1 className="page-title">Listing unavailable</h1>
+            </div>
+            <button className="btn btn-secondary" type="button" onClick={() => navigate("/home")}>
+              Back
+            </button>
+          </header>
           <section className="empty-state">
             <h3>{loadError}</h3>
-            <p>Try returning to the marketplace and opening it again.</p>
           </section>
         </div>
       </main>
