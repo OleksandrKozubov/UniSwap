@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAvatarPlaceholder, getAvatarUrl } from "../utils/avatar";
 
+// Profile shows the signed-in user's account details and account actions.
 function Profile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(() =>

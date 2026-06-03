@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ListingCard from "../components/ListingCard";
 
+// SavedListings loads and displays the current user's saved marketplace items.
 function SavedListings() {
   const navigate = useNavigate();
   const [user] = useState(() =>

@@ -1,3 +1,4 @@
+// Format a listing price for marketplace cards and detail pages.
 export function formatPrice(price) {
   const numericPrice = Number(price);
 

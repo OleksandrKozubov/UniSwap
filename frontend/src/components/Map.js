@@ -1,5 +1,6 @@
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 
+// Map renders the selected listing location with OpenStreetMap tiles.
 function Map({ lat, lng }) {
   return (
     <MapContainer

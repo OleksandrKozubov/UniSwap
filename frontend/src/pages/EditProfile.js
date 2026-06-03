@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAvatarPlaceholder, getAvatarUrl } from "../utils/avatar";
 
+// EditProfile lets the signed-in user update profile fields and avatar.
 function EditProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(() =>

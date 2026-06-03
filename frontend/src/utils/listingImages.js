@@ -1,3 +1,4 @@
+// Inline SVG shown when a listing has no usable uploaded image.
 const listingPlaceholderImage =
   "data:image/svg+xml;charset=UTF-8," +
   encodeURIComponent(
@@ -11,6 +12,7 @@ const listingPlaceholderImage =
     "</svg>"
   );
 
+// Parse image fields that were stored as JSON strings.
 function getParsedImageValue(value) {
   if (typeof value !== "string") {
     return null;
@@ -33,6 +35,7 @@ function getParsedImageValue(value) {
   return null;
 }
 
+// Normalize image sources from strings, arrays, or database row objects.
 function getImageUrls(source) {
   if (!source) {
     return [];
@@ -72,6 +75,7 @@ function getImageUrls(source) {
   return Object.values(source).flatMap(getImageUrls);
 }
 
+// Return unique image URLs from all supported listing image fields.
 export function getListingImageUrls(listing) {
   if (!listing) {
     return [];

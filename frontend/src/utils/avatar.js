@@ -1,3 +1,4 @@
+// Build initials from a name for generated avatar placeholders.
 function getInitials(label) {
   const fallback = "User";
   const words = String(label || fallback)
@@ -16,6 +17,7 @@ function getInitials(label) {
     .toUpperCase();
 }
 
+// Create an inline SVG avatar when a user has no uploaded image.
 export function getAvatarPlaceholder(label) {
   const initials = getInitials(label);
   const svg =
@@ -31,6 +33,7 @@ export function getAvatarPlaceholder(label) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+// Pick the first available avatar URL or fall back to a generated placeholder.
 export function getAvatarUrl(source, label) {
   const avatarUrl =
     source?.avatar_url ||

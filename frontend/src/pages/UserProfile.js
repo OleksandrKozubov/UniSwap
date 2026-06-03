@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ListingCard from "../components/ListingCard";
 import { getAvatarPlaceholder } from "../utils/avatar";
 
+// UserProfile shows a seller profile together with that user's listings.
 function UserProfile() {
   const { id } = useParams();
   const navigate = useNavigate();

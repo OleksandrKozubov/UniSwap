@@ -3,6 +3,7 @@ const listingDateFormatter = new Intl.DateTimeFormat("en-GB", {
   month: "short"
 });
 
+// Format a listing creation date for compact card display.
 export function formatListingDate(createdAt) {
   if (!createdAt) {
     return "";

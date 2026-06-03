@@ -8,6 +8,7 @@ import { getAvatarPlaceholder } from "../utils/avatar";
 import { formatPrice } from "../utils/formatPrice";
 import { formatListingDate } from "../utils/formatListingDate";
 
+// HeartIcon draws the save button icon in either filled or outline state.
 function HeartIcon({ filled }) {
   return (
     <svg className="heart-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -22,6 +23,7 @@ function HeartIcon({ filled }) {
   );
 }
 
+// ListingCard renders a marketplace item with seller details and save actions.
 function ListingCard({ listing, isOwner, currentUserId, onSavedChange }) {
   const navigate = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem("user") || "null");

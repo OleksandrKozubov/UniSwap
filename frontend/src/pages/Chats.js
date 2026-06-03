@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAvatarPlaceholder } from "../utils/avatar";
 
+// Chats loads the signed-in user's conversations and unread counts.
 function Chats() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "null");

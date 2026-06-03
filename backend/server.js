@@ -17,6 +17,9 @@ const io = new Server(server, {
   }
 });
 
+// This code was developed with assistance from ChatGPT (GPT-5.5, 2026).
+// Prompt: "Create a basic Socket.IO server for real-time chat messages between connected users."
+// The generated example was reviewed, modified, and integrated into the UniSwap project.
 io.on("connection", (socket) => {
 
   console.log("User connected:", socket.id);
@@ -63,10 +66,12 @@ app.use(cors({
   origin: "http://localhost:3000"
 }));
 
+// Upload listing images and return the hosted image URL.
 app.post("/upload", upload.single("image"), (req, res) => {
   res.json({ imageUrl: req.file.path });
 });
 
+// Return chat summaries for the inbox, including unread message counts.
 app.get("/chats/:userId", async (req, res) => {
   const userId = Number(req.params.userId);
 
@@ -119,6 +124,7 @@ app.get("/chats/:userId", async (req, res) => {
   }
 });
 
+// Mark messages in a selected conversation as read for the receiver.
 app.put("/messages/read", async (req, res) => {
   const { userId, listingId, otherUserId } = req.body;
 
@@ -134,6 +140,7 @@ app.put("/messages/read", async (req, res) => {
   res.sendStatus(200);
 });
 
+// Return the unread message count used by notification badges.
 app.get("/messages/unread/:userId", async (req, res) => {
   const result = await pool.query(
     `SELECT COUNT(*) FROM messages
@@ -144,6 +151,7 @@ app.get("/messages/unread/:userId", async (req, res) => {
   res.json({ count: result.rows[0].count });
 });
 
+// Return all messages for a listing so the chat page can filter one conversation.
 app.get("/messages/:listingId", async (req, res) => {
   const result = await pool.query(
     `SELECT * FROM messages
@@ -160,6 +168,7 @@ app.get("/", (req, res) => {
   res.send("UniSwap backend running");
 });
 
+// Load all images for a listing and keep older single-image records visible.
 async function getListingImages(listing) {
   const imageRows = await pool.query(
     "SELECT id, image_url FROM listing_images WHERE listing_id = $1 ORDER BY id ASC",
@@ -182,16 +191,19 @@ async function getListingImages(listing) {
   return images;
 }
 
+// Convert optional user id values into a valid positive integer or null.
 function parseOptionalUserId(value) {
   const userId = Number(value);
 
   return Number.isInteger(userId) && userId > 0 ? userId : null;
 }
 
+// Detect when the saved listings table has not been created yet.
 function isMissingSavedListingsTable(error) {
   return error?.code === "42P01";
 }
 
+// Read the save count and whether the current viewer saved the listing.
 async function getListingSaveData(listingId, userId) {
   try {
     const countResult = await pool.query(
@@ -228,6 +240,7 @@ async function getListingSaveData(listingId, userId) {
   }
 }
 
+// Attach image and saved-listing metadata before sending listing responses.
 async function hydrateListing(listing, userId) {
   const [images, saveData] = await Promise.all([
     getListingImages(listing),
@@ -252,6 +265,7 @@ app.get("/messages/:listingId", async (req, res) => {
   res.json(result.rows);
 });
 
+// Return category options used by listing forms and filters.
 app.get("/categories", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM categories ORDER BY name ASC");
@@ -262,6 +276,7 @@ app.get("/categories", async (req, res) => {
   }
 });
 
+// Save one listing for the current user.
 app.post("/listings/:id/save", async (req, res) => {
   const listingId = Number(req.params.id);
   const userId = parseOptionalUserId(req.body.userId);
@@ -296,6 +311,7 @@ app.post("/listings/:id/save", async (req, res) => {
   }
 });
 
+// Remove one listing from the current user's saved list.
 app.delete("/listings/:id/save", async (req, res) => {
   const listingId = Number(req.params.id);
   const userId = parseOptionalUserId(req.body.userId);
@@ -324,7 +340,9 @@ app.delete("/listings/:id/save", async (req, res) => {
   }
 });
 
-// Return every listing so the home page can render the marketplace feed.
+// This code was developed with assistance from ChatGPT (GPT-5.5, 2026).
+// Prompt: "Create an Express.js route that searches and filters marketplace listings with PostgreSQL."
+// The generated example was reviewed, modified, and integrated into the UniSwap project.
 app.get("/listings", async (req, res) => {
   const {
     search,
@@ -407,6 +425,7 @@ app.get("/listings", async (req, res) => {
   }
 });
 
+// Delete an image from a listing after confirming the requesting user owns it.
 app.delete("/listings/:listingId/images", async (req, res) => {
   const { userId, imageId, imageUrl } = req.body;
 
@@ -463,6 +482,7 @@ app.delete("/listings/:listingId/images", async (req, res) => {
   }
 });
 
+// Upload a profile avatar and return its hosted image URL.
 app.post("/upload-avatar", upload.single("image"), async (req, res) => {
   try {
     if (!req.file?.path) {
@@ -476,6 +496,7 @@ app.post("/upload-avatar", upload.single("image"), async (req, res) => {
   }
 });
 
+// Return all listings saved by one user.
 app.get("/users/:id/saved-listings", async (req, res) => {
   const userId = parseOptionalUserId(req.params.id);
 
@@ -518,6 +539,7 @@ app.get("/users/:id/saved-listings", async (req, res) => {
   }
 });
 
+// Return the public profile fields for one user.
 app.get("/users/:id", async (req, res) => {
   try {
     const result = await pool.query(
@@ -538,6 +560,7 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
+// Update profile fields and the optional avatar URL for one user.
 app.put("/users/:id", async (req, res) => {
   const { name, university, avatarUrl } = req.body;
   const normalizedAvatarUrl = avatarUrl || null;
@@ -562,6 +585,7 @@ app.put("/users/:id", async (req, res) => {
   }
 });
 
+// Return listings created by one user for profile pages.
 app.get("/users/:id/listings", async (req, res) => {
   const viewerId = parseOptionalUserId(req.query.userId);
 
@@ -591,6 +615,7 @@ app.get("/users/:id/listings", async (req, res) => {
   }
 });
 
+// Delete an uploaded listing image by image id.
 app.delete("/listing-images/:id", async (req, res) => {
   try {
     await pool.query(
@@ -782,6 +807,9 @@ app.post("/change-password", async (req, res) => {
 });
 
 // Register a new user account and store the password securely as a hash.
+// This code was developed with assistance from ChatGPT (GPT-5.5, 2026).
+// Prompt: "Show how to hash user passwords using bcrypt in a Node.js registration route."
+// The generated example was reviewed, modified, and integrated into the UniSwap project.
 app.post("/register", async (req, res) => {
   const { email, name, university, password } = req.body;
 
@@ -806,6 +834,9 @@ if (!email || !name || !university || !password) {
 });
 
 // Log a user in by checking the password and returning a signed JWT.
+// This code was developed with assistance from ChatGPT (GPT-5.5, 2026).
+// Prompt: "Create a Node.js login route that verifies a bcrypt password and returns a JWT."
+// The generated example was reviewed, modified, and integrated into the UniSwap project.
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 

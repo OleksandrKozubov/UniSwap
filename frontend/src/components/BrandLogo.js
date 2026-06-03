@@ -1,3 +1,4 @@
+// BrandLogo renders the reusable cap mark used in headers and auth cards.
 function BrandLogo({ size = "default" }) {
   const className =
     size === "large" ? "brand-logo brand-logo--large" : "brand-logo";
@@ -18,4 +19,3 @@ function BrandLogo({ size = "default" }) {
 }
 
 export default BrandLogo;
-

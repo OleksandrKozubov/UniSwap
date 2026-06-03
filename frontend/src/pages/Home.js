@@ -68,6 +68,9 @@ function Home() {
     };
   }, [user?.id]);
 
+  // This code was developed with assistance from ChatGPT (GPT-5.5, 2026).
+  // Prompt: "Create a React useEffect example that fetches filtered marketplace listings from a REST API endpoint."
+  // The generated example was reviewed, modified, and integrated into the UniSwap project.
   useEffect(() => {
     const params = new URLSearchParams();
 

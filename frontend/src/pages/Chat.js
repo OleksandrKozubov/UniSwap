@@ -5,6 +5,7 @@ import { getAvatarPlaceholder } from "../utils/avatar";
 
 const socket = io("http://localhost:5001");
 
+// Format message timestamps for display inside chat bubbles.
 function formatMessageTime(value) {
   const date = new Date(value);
 
@@ -18,6 +19,7 @@ function formatMessageTime(value) {
   });
 }
 
+// Chat loads one conversation and sends new messages through Socket.IO.
 function Chat() {
   const { listingId, receiverId } = useParams();
   const navigate = useNavigate();
